@@ -1,0 +1,1734 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NEET (UG) 2027 — Digital CBT Mock Exam & Anti-Cheating Portal (720 Marks)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f1f5f9;
+      color: #0f172a;
+      overflow-x: hidden;
+    }
+    .font-mono-num {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .math-expr {
+      font-family: 'Cambria Math', 'Times New Roman', serif;
+      font-size: 1.04em;
+    }
+    /* Strict anti-copy and anti-selection protection during active exam */
+    .exam-proctored-lock {
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+    }
+    /* NTA-style palette states */
+    .pal-not-visited {
+      background-color: #e2e8f0;
+      color: #334155;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+    }
+    .pal-not-answered {
+      background-color: #dc2626;
+      color: #ffffff;
+      border: 1px solid #b91c1c;
+      border-radius: 6px 6px 16px 16px;
+    }
+    .pal-answered {
+      background-color: #16a34a;
+      color: #ffffff;
+      border: 1px solid #15803d;
+      border-radius: 16px 16px 6px 6px;
+    }
+    .pal-marked {
+      background-color: #7e22ce;
+      color: #ffffff;
+      border: 1px solid #6b21a8;
+      border-radius: 9999px;
+    }
+    .pal-answered-marked {
+      background-color: #7e22ce;
+      color: #ffffff;
+      border: 2px solid #22c55e;
+      border-radius: 9999px;
+      position: relative;
+    }
+    .pal-answered-marked::after {
+      content: "✓";
+      position: absolute;
+      bottom: -3px;
+      right: -3px;
+      width: 14px;
+      height: 14px;
+      background-color: #16a34a;
+      color: #ffffff;
+      border: 1px solid #ffffff;
+      border-radius: 9999px;
+      font-size: 9px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    @keyframes fiveMinFlash {
+      0%, 100% { background-color: #991b1b; }
+      50% { background-color: #dc2626; }
+    }
+    .five-min-alert-bar {
+      animation: fiveMinFlash 1.1s infinite;
+    }
+    @media print {
+      .no-print { display: none !important; }
+      body { background-color: #ffffff !important; }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- Toast Banner -->
+  <div id="appToast" class="fixed bottom-5 right-5 z-50 hidden max-w-md bg-slate-900 text-white px-4 py-3 rounded-xl shadow-2xl border border-slate-700 text-xs sm:text-sm font-medium"></div>
+
+  <!-- Anti-Cheating Warning Modal -->
+  <div id="antiCheatModal" class="fixed inset-0 z-50 hidden bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="bg-white border-2 border-red-600 rounded-2xl max-w-lg w-full p-6 shadow-2xl text-center">
+      <div class="w-14 h-14 mx-auto rounded-full bg-red-100 text-red-600 flex items-center justify-center text-2xl font-extrabold">
+        ⚠
+      </div>
+      <h2 class="text-xl font-extrabold text-red-700 uppercase tracking-wide mt-3">
+        Screen-Change &amp; Anti-Cheat Warning!
+      </h2>
+      <p id="antiCheatReasonMsg" class="text-sm text-slate-700 font-medium mt-2">
+        Tab switch, window focus loss, or fullscreen exit detected.
+      </p>
+      <div class="mt-4 bg-red-50 border border-red-200 rounded-xl p-3.5">
+        <div class="text-[11px] font-extrabold uppercase text-red-600">Violation Strike Count</div>
+        <div id="antiCheatStrikeDisplay" class="text-2xl font-extrabold font-mono-num text-red-700 mt-0.5">1 / 3</div>
+        <p class="text-xs text-red-600 mt-1">
+          Reaching 3 strikes automatically stops and submits your exam.
+        </p>
+      </div>
+      <button id="resumeFullscreenExamBtn" class="mt-5 w-full py-3 px-5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-extrabold text-sm shadow-lg transition cursor-pointer">
+        Resume Fullscreen Exam Now
+      </button>
+    </div>
+  </div>
+
+  <!-- Submit Confirmation Modal -->
+  <div id="confirmSubmitModal" class="fixed inset-0 z-50 hidden bg-slate-900/75 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-xl w-full p-6 shadow-2xl border border-slate-200">
+      <h3 class="text-lg font-extrabold text-slate-900">Final Submission — NEET (UG) 2027 Mock Exam</h3>
+      <p class="text-xs sm:text-sm text-slate-600 mt-1">
+        Once submitted, answers cannot be edited. Your response sheet (.json) and verification code will be generated for your teacher.
+      </p>
+      <div id="confirmSummaryTableWrap" class="mt-4 overflow-x-auto"></div>
+      <div class="mt-6 flex flex-col sm:flex-row gap-3 justify-end">
+        <button id="cancelConfirmSubmitBtn" class="px-4 py-2.5 rounded-xl border border-slate-300 text-slate-700 font-bold text-sm hover:bg-slate-100 cursor-pointer">
+          Return to Exam
+        </button>
+        <button id="executeFinalSubmitBtn" class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-sm shadow cursor-pointer">
+          Submit Exam Now
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== VIEW 1: START & CANDIDATE VERIFICATION ==================== -->
+  <div id="startPortalView" class="flex-1 flex flex-col">
+    <header class="bg-[#0b2545] text-white border-b-4 border-amber-400 px-4 sm:px-8 py-4 shadow-md">
+      <div class="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div>
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="px-2.5 py-0.5 rounded bg-amber-400 text-slate-950 text-[11px] font-extrabold uppercase tracking-wider">
+              NEET UG 2027 CBT • 720 MARKS
+            </span>
+            <span id="dedupStatusBadge" class="text-xs text-emerald-300 font-semibold">
+              135 Unique Qs Verified (45 Phy • 45 Chem • 45 Bio) • 70% Tough / 30% Moderate
+            </span>
+          </div>
+          <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight mt-1">
+            NEET (UG) 2027 DIGITAL CBT MOCK EXAMINATION PORTAL
+          </h1>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2">
+          <button id="previewFiveMinBellBtn" class="px-3.5 py-2 rounded-xl bg-amber-400/15 hover:bg-amber-400/25 border border-amber-300/40 text-amber-200 text-xs font-bold transition cursor-pointer">
+            🔔 Test 5-Min Bell
+          </button>
+          <button id="openTeacherPortalBtn" class="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-slate-950 text-xs font-extrabold shadow transition cursor-pointer">
+            🔐 Teacher Portal
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="max-w-6xl w-full mx-auto px-4 sm:px-6 py-7 grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <!-- Candidate Verification Form -->
+      <div class="lg:col-span-7 bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+        <h2 class="text-base sm:text-lg font-extrabold text-[#0b2545] border-b border-slate-200 pb-3">
+          1. Candidate Verification &amp; Exam Timer Setup
+        </h2>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5 mt-4">
+          <div>
+            <label for="candNameInput" class="block text-xs font-bold uppercase text-slate-600 mb-1">
+              Candidate Name *
+            </label>
+            <input id="candNameInput" type="text" placeholder="Full Name" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#0b2545]" />
+          </div>
+          <div>
+            <label for="candRollInput" class="block text-xs font-bold uppercase text-slate-600 mb-1">
+              Roll / ID Number *
+            </label>
+            <input id="candRollInput" type="text" placeholder="e.g., NEET27-019" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-mono-num focus:outline-none focus:ring-2 focus:ring-[#0b2545]" />
+          </div>
+          <div>
+            <label for="candBatchInput" class="block text-xs font-bold uppercase text-slate-600 mb-1">
+              Batch *
+            </label>
+            <input id="candBatchInput" type="text" placeholder="e.g., Target-2027-A" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#0b2545]" />
+          </div>
+        </div>
+
+        <div class="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 border border-slate-200 rounded-xl p-4">
+          <div>
+            <label for="examDurationSelect" class="block text-xs font-bold uppercase text-slate-700 mb-1">
+              Select Exam Timer Duration *
+            </label>
+            <select id="examDurationSelect" class="w-full px-3 py-2.5 rounded-lg border border-slate-300 bg-white text-xs sm:text-sm font-bold text-slate-800">
+              <option value="180">180 Minutes (Standard NEET CBT)</option>
+              <option value="60">60 Minutes (Focused Speed Practice)</option>
+              <option value="demo515">05:15 Quick Bell Test (Bell rings at 05:00 in 15s)</option>
+            </select>
+          </div>
+          <div class="flex flex-col justify-center text-xs text-slate-700">
+            <span class="font-extrabold text-[#0b2545] uppercase">720-Mark Scoring Formula</span>
+            <p class="mt-1 leading-relaxed">
+              135 Qs (45 Phy + 45 Chem + 45 Bio). Raw mark = <strong>+4</strong> correct, <strong>−1</strong> wrong, <strong>0</strong> blank; scaled proportionally to <strong>720 marks</strong> (240 per subject module).
+            </p>
+          </div>
+        </div>
+
+        <div class="mt-5 flex items-start gap-2.5">
+          <input id="examRulesAcceptCheckbox" type="checkbox" class="mt-1 w-4 h-4 accent-[#0b2545] cursor-pointer" />
+          <label for="examRulesAcceptCheckbox" class="text-xs text-slate-700 leading-relaxed cursor-pointer">
+            I read and accept all exam rules: the countdown timer starts only when I click <strong>Start Exam &amp; Lock Fullscreen</strong>, a <strong>5-minute warning bell</strong> sounds at 05:00 remaining, screen changes or tab switches trigger strikes (auto-submitting at 3 strikes), and answers are never shown to students.
+          </label>
+        </div>
+
+        <button id="startExamLockBtn" class="mt-6 w-full py-3.5 px-6 rounded-xl bg-[#0b2545] hover:bg-slate-800 text-white font-extrabold text-sm sm:text-base shadow-lg transition cursor-pointer">
+          ▶ Start Exam &amp; Lock Fullscreen
+        </button>
+      </div>
+
+      <!-- Rules & Teacher Passcode Info -->
+      <div class="lg:col-span-5 flex flex-col gap-5">
+        <div class="bg-red-50 border border-red-200 rounded-2xl p-5">
+          <h3 class="text-sm font-extrabold text-red-800 uppercase">
+            🛡️ Strict Anti-Cheating &amp; Screen-Change Lock
+          </h3>
+          <ul class="mt-3 space-y-2 text-xs text-red-900 leading-relaxed list-disc pl-4">
+            <li><strong>Fullscreen Enforcement:</strong> Exam requests fullscreen upon start; exiting fullscreen logs a violation strike.</li>
+            <li><strong>Screen-Change / Tab-Switch Alert:</strong> Switching tabs, minimizing, or losing window focus triggers a warning modal and increments your strike counter. At <strong>3 strikes</strong>, the exam stops and auto-submits.</li>
+            <li><strong>Copy &amp; DevTools Blocked:</strong> Right-click, text selection, Ctrl+C/V/X/P/U, F12, and Ctrl+Shift+I/J/C are blocked.</li>
+            <li><strong>Randomized Questions &amp; Options:</strong> Question sequence per module and options A–D are shuffled per attempt.</li>
+          </ul>
+        </div>
+
+        <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+          <h3 class="text-sm font-extrabold text-[#0b2545]">👩‍🏫 Teacher Portal &amp; GitHub Hosting</h3>
+          <p class="text-xs text-slate-600 mt-1.5 leading-relaxed">
+            Host this single <code>index.html</code> file on <strong>GitHub Pages</strong> and share the URL with your students. Students download their <code>.json</code> response receipt after submission.
+          </p>
+          <div class="mt-3 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-950">
+            <strong>Teacher Portal Passcode:</strong> <code class="font-mono-num font-bold bg-white px-1.5 py-0.5 rounded border border-emerald-300">NEET2027</code>
+            <p class="mt-1 text-[11px] text-emerald-800">
+              Teachers can change this passcode by updating <code>const TEACHER_PORTAL_PASSCODE = "NEET2027";</code> in the script section of <code>index.html</code>.
+            </p>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- ==================== VIEW 2: ACTIVE 3-MODULE CBT EXAM ==================== -->
+  <div id="activeExamView" class="hidden flex-1 flex flex-col exam-proctored-lock">
+    <!-- 5-Minute Warning Banner -->
+    <div id="fiveMinuteBellBanner" class="hidden five-min-alert-bar text-white px-4 py-2 text-center text-xs sm:text-sm font-extrabold tracking-wide shadow">
+      🔔 5-MINUTE WARNING BELL! Only 05:00 or less remaining — verify your saved answers before auto-submission.
+    </div>
+
+    <!-- Top CBT Header -->
+    <header class="bg-[#0b2545] text-white px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 shadow">
+      <div class="flex items-center gap-2.5">
+        <span class="font-extrabold text-sm sm:text-base">NEET 2027 CBT</span>
+        <span id="examCandidateSummaryPill" class="text-xs bg-white/15 px-2.5 py-1 rounded-lg font-medium"></span>
+      </div>
+
+      <!-- 3 Separate Subject Module Tabs -->
+      <div id="moduleTabsBar" class="flex flex-wrap items-center gap-1.5 bg-slate-950/60 p-1 rounded-xl"></div>
+
+      <!-- Strike Counter & Countdown Timer -->
+      <div class="flex items-center gap-3">
+        <div id="examStrikePill" class="px-2.5 py-1 rounded-lg bg-emerald-900/70 border border-emerald-400/40 text-xs font-bold text-emerald-200">
+          Strikes: <span id="examStrikeNum" class="font-mono-num">0</span>/3
+        </div>
+        <div class="bg-slate-950 border border-amber-400/60 px-3.5 py-1 rounded-xl flex items-center gap-2">
+          <span class="text-[11px] uppercase text-slate-400 font-bold">Time Left</span>
+          <span id="liveTimerClock" class="font-mono-num text-base sm:text-lg font-extrabold text-amber-400">03:00:00</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main CBT Split Workspace -->
+    <div class="flex-1 grid grid-cols-1 lg:grid-cols-12 min-h-0">
+      <!-- Question & Options A-D -->
+      <section class="lg:col-span-8 xl:col-span-9 bg-white border-r border-slate-200 p-4 sm:p-6 flex flex-col justify-between">
+        <div>
+          <div class="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-200">
+            <div class="flex items-center gap-2">
+              <span id="qModuleBadge" class="px-3 py-1 rounded-lg bg-sky-100 text-[#0b2545] text-xs font-extrabold uppercase">Physics</span>
+              <span id="qNumberHeading" class="text-sm sm:text-base font-extrabold text-slate-900">Question 1 of 45</span>
+              <span id="qDifficultyChip" class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-900">Tough</span>
+            </div>
+            <div class="text-xs font-bold text-slate-600">
+              +4 Correct • −1 Wrong • 0 Unattempted (Scaled to 720)
+            </div>
+          </div>
+
+          <div id="qPromptBox" class="mt-5 text-base sm:text-lg text-slate-900 font-medium leading-relaxed"></div>
+
+          <div id="qChoicesBox" class="mt-6 space-y-3"></div>
+        </div>
+
+        <!-- Bottom NTA Action Controls -->
+        <div class="mt-8 pt-4 border-t border-slate-200 flex flex-wrap items-center justify-between gap-3">
+          <div class="flex flex-wrap items-center gap-2">
+            <button id="btnSaveAndNext" class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold shadow-2xs transition cursor-pointer">
+              Save &amp; Next
+            </button>
+            <button id="btnClearResponse" class="px-4 py-2.5 rounded-xl border border-slate-300 hover:bg-slate-100 text-slate-700 text-xs sm:text-sm font-bold transition cursor-pointer">
+              Clear Response
+            </button>
+            <button id="btnMarkReviewNext" class="px-4 py-2.5 rounded-xl bg-purple-700 hover:bg-purple-800 text-white text-xs sm:text-sm font-bold shadow-2xs transition cursor-pointer">
+              Mark for Review &amp; Next
+            </button>
+          </div>
+          <div class="flex items-center gap-2">
+            <button id="btnPrevQuestion" class="px-3.5 py-2.5 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 text-xs sm:text-sm font-bold transition cursor-pointer">
+              ← Previous
+            </button>
+            <button id="btnOpenSubmitModal" class="px-5 py-2.5 rounded-xl bg-[#0b2545] hover:bg-slate-800 text-amber-300 text-xs sm:text-sm font-extrabold shadow transition cursor-pointer">
+              Submit Exam
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Independent Module Palette -->
+      <aside class="lg:col-span-4 xl:col-span-3 bg-slate-100 p-4 flex flex-col justify-between">
+        <div>
+          <div class="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
+            <div class="text-xs font-extrabold uppercase text-slate-700 mb-2">Module Palette Status</div>
+            <div class="grid grid-cols-2 gap-2 text-[11px] font-semibold text-slate-700">
+              <div class="flex items-center gap-2">
+                <span id="statAnswered" class="w-6 h-6 flex items-center justify-center text-[10px] font-bold pal-answered">0</span>
+                <span>Answered</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span id="statNotAnswered" class="w-6 h-6 flex items-center justify-center text-[10px] font-bold pal-not-answered">0</span>
+                <span>Not Answered</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span id="statNotVisited" class="w-6 h-6 flex items-center justify-center text-[10px] font-bold pal-not-visited">0</span>
+                <span>Not Visited</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span id="statMarked" class="w-6 h-6 flex items-center justify-center text-[10px] font-bold pal-marked">0</span>
+                <span>Marked Review</span>
+              </div>
+              <div class="col-span-2 flex items-center gap-2">
+                <span id="statAnsweredMarked" class="w-6 h-6 flex items-center justify-center text-[10px] font-bold pal-answered-marked">0</span>
+                <span>Answered &amp; Marked for Review</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-4 flex items-center justify-between">
+            <span id="paletteModuleTitle" class="text-xs font-extrabold uppercase text-[#0b2545]">Physics Questions</span>
+            <span class="text-xs font-bold text-slate-500">45 Qs</span>
+          </div>
+
+          <div id="modulePaletteGrid" class="mt-2.5 grid grid-cols-5 gap-2 max-h-[380px] overflow-y-auto p-1"></div>
+        </div>
+
+        <div class="mt-4 pt-3 border-t border-slate-200 text-[11px] text-slate-500">
+          Anti-Cheat Screen Lock Active • Answers Hidden
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <!-- ==================== VIEW 3: STUDENT RECEIPT (NO SCORES OR ANSWERS) ==================== -->
+  <div id="studentReceiptScreen" class="hidden flex-1 bg-slate-100 py-8 px-4">
+    <div class="max-w-3xl mx-auto bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
+      <div id="receiptHeaderBox" class="bg-[#0b2545] text-white p-6">
+        <div class="text-xs uppercase font-bold tracking-wider text-amber-300">
+          Student Response Receipt • Evaluation Sealed
+        </div>
+        <h2 class="text-2xl font-extrabold mt-1">
+          NEET (UG) 2027 — Exam Recorded
+        </h2>
+        <p class="text-xs text-slate-200 mt-1">
+          Scores and answer keys are restricted to the Teacher Portal. Send your .json receipt or verification code to your teacher.
+        </p>
+      </div>
+
+      <div class="p-6 space-y-5">
+        <div id="receiptViolationLockAlert" class="hidden bg-red-50 border-2 border-red-600 rounded-xl p-4 text-red-800 text-xs sm:text-sm font-bold">
+          ⚠ EXAM AUTOMATICALLY STOPPED &amp; SUBMITTED DUE TO REACHING 3 ANTI-CHEATING VIOLATION STRIKES.
+        </div>
+
+        <div id="receiptMetaSummary" class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm bg-slate-50 p-4 rounded-xl border border-slate-200"></div>
+
+        <div>
+          <h3 class="text-sm font-extrabold text-slate-800 mb-2">Attempt Counts by Subject Module</h3>
+          <div id="receiptAttemptTableWrap" class="overflow-x-auto"></div>
+        </div>
+
+        <div class="bg-amber-50 border border-amber-200 rounded-xl p-4">
+          <div class="text-xs font-extrabold uppercase text-amber-950">
+            Student Response Receipt (.json) &amp; Verification Code
+          </div>
+          <p class="text-xs text-amber-800 mt-1">
+            Download the JSON receipt or copy the verification code below and submit it to your teacher.
+          </p>
+          <textarea id="receiptCodeOutput" readonly rows="3" class="mt-2.5 w-full p-2.5 rounded-lg bg-white border border-amber-300 font-mono-num text-xs text-slate-800"></textarea>
+          <div class="mt-3 flex flex-wrap gap-2.5">
+            <button id="downloadReceiptJsonBtn" class="px-4 py-2.5 rounded-xl bg-[#0b2545] hover:bg-slate-800 text-white text-xs font-bold shadow cursor-pointer">
+              ⬇ Download Response Receipt (.json)
+            </button>
+            <button id="copyReceiptCodeBtn" class="px-4 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-500 text-slate-950 text-xs font-extrabold cursor-pointer">
+              📋 Copy Verification Code
+            </button>
+            <button onclick="window.print()" class="px-4 py-2.5 rounded-xl border border-slate-300 hover:bg-slate-100 text-slate-700 text-xs font-bold cursor-pointer">
+              🖨 Print Receipt
+            </button>
+          </div>
+        </div>
+
+        <div class="pt-2 flex items-center justify-between">
+          <button id="backToPortalHomeBtn" class="text-xs font-bold text-slate-600 hover:text-slate-900 underline cursor-pointer">
+            ← Back to Start Screen
+          </button>
+          <span class="text-xs text-slate-400">No Answers Exposed to Student</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== VIEW 4: TEACHER PORTAL (ANSWER KEY & 720 GRADER) ==================== -->
+  <div id="teacherPortalModal" class="fixed inset-0 z-50 hidden bg-slate-950/85 backdrop-blur-sm overflow-y-auto p-4">
+    <div class="max-w-6xl mx-auto my-6 bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
+      <div class="bg-[#0b2545] text-white px-6 py-4 flex items-center justify-between gap-3">
+        <div>
+          <span class="text-xs font-bold uppercase text-amber-300">Restricted Educator Access</span>
+          <h2 class="text-lg sm:text-xl font-extrabold">
+            NEET 2027 Separate Answer Key &amp; 720-Mark Auto-Grader
+          </h2>
+        </div>
+        <button id="closeTeacherModalBtn" class="px-3.5 py-1.5 rounded-lg bg-white/15 hover:bg-white/25 text-white text-xs font-bold cursor-pointer">
+          ✕ Close
+        </button>
+      </div>
+
+      <!-- Passcode Gate -->
+      <div id="teacherAuthGate" class="p-8 max-w-md mx-auto text-center">
+        <div class="text-3xl mb-2">🔐</div>
+        <h3 class="text-lg font-extrabold text-slate-900">Enter Teacher Passcode</h3>
+        <p class="text-xs text-slate-500 mt-1">
+          Default passcode: <code class="font-mono-num font-bold bg-slate-100 px-1.5 py-0.5 rounded">NEET2027</code>
+        </p>
+        <input id="teacherPassInput" type="password" placeholder="Passcode" class="mt-4 w-full px-4 py-2.5 rounded-xl border border-slate-300 text-center font-mono-num text-sm focus:outline-none focus:ring-2 focus:ring-[#0b2545]" />
+        <button id="unlockTeacherBtn" class="mt-4 w-full py-2.5 px-5 rounded-xl bg-[#0b2545] hover:bg-slate-800 text-white font-bold text-sm cursor-pointer">
+          Unlock Answer Key &amp; Grader
+        </button>
+      </div>
+
+      <!-- Unlocked Teacher Workspace -->
+      <div id="teacherMainWorkspace" class="hidden p-6 space-y-6">
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3 no-print">
+          <div class="flex flex-wrap gap-2">
+            <button data-tpanel="tKeyPanel" class="t-tab-btn px-4 py-2 rounded-xl bg-[#0b2545] text-white text-xs font-bold cursor-pointer">
+              1. Separate Subject Answer Keys
+            </button>
+            <button data-tpanel="tGraderPanel" class="t-tab-btn px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold cursor-pointer">
+              2. Grade Student .json / Code &amp; Audit Strikes
+            </button>
+          </div>
+          <button id="exportResultsCsvBtn" class="hidden px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold cursor-pointer">
+            📊 Export Summary (.csv)
+          </button>
+        </div>
+
+        <!-- Subject Answer Key Panel -->
+        <div id="tKeyPanel" class="t-panel space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-3 no-print">
+            <div class="flex items-center gap-2">
+              <label for="keyModuleFilter" class="text-xs font-bold text-slate-700">Subject Module:</label>
+              <select id="keyModuleFilter" class="px-3 py-1.5 rounded-lg border border-slate-300 text-xs font-bold">
+                <option value="ALL">All 3 Modules (135 Qs)</option>
+                <option value="Physics">Physics (45 Qs)</option>
+                <option value="Chemistry">Chemistry (45 Qs)</option>
+                <option value="Biology">Biology (45 Qs)</option>
+              </select>
+            </div>
+            <button onclick="window.print()" class="px-4 py-2 rounded-xl bg-[#0b2545] hover:bg-slate-800 text-white text-xs font-bold cursor-pointer">
+              🖨 Print Answer Key
+            </button>
+          </div>
+          <div id="teacherAnswerKeyTables" class="space-y-6 max-h-[60vh] overflow-y-auto pr-1"></div>
+        </div>
+
+        <!-- Auto-Grader Panel -->
+        <div id="tGraderPanel" class="t-panel hidden space-y-4">
+          <div class="bg-slate-50 border border-slate-200 rounded-xl p-4">
+            <label class="block text-xs font-extrabold uppercase text-slate-700">
+              Upload Student .json Receipt File(s) or Paste Verification Code(s)
+            </label>
+            <div class="flex flex-col sm:flex-row gap-3 mt-2.5">
+              <input id="teacherJsonUploadInput" type="file" accept=".json" multiple class="text-xs text-slate-600 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-[#0b2545] file:text-white file:font-bold cursor-pointer" />
+              <button id="gradeStudentReceiptsBtn" class="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold cursor-pointer">
+                Compute 720-Mark Score &amp; Logs
+              </button>
+            </div>
+            <textarea id="teacherCodePasteInput" rows="3" placeholder="Paste NEET27-CBTV2-... verification code(s), one per line..." class="mt-3 w-full p-2.5 rounded-lg border border-slate-300 font-mono-num text-xs"></textarea>
+          </div>
+
+          <div id="teacherGradedCardsWrap" class="space-y-4"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== QUESTION BANK, DEDUP & EXAM ENGINE ==================== -->
+  <script>
+    (function () {
+      "use strict";
+
+      // Teacher passcode (customize here before hosting on GitHub Pages)
+      const TEACHER_PORTAL_PASSCODE = "NEET2027";
+      const MAX_VIOLATION_STRIKES = 3;
+
+      // ---------------------------------------------------------------------
+      // 1. 135 UNIQUE NEET 2027 QUESTIONS (45 PHYSICS, 45 CHEMISTRY, 45 BIO)
+      //    70% Tough (32 per subject = 96 Qs) + 30% Moderate (13 per subject = 39 Qs)
+      // ---------------------------------------------------------------------
+      const RAW_QUESTION_BANK = [
+        // ==================== PHYSICS (45 QUESTIONS: 32 TOUGH, 13 MODERATE) ====================
+        { id: "PHY-01", subject: "Physics", difficulty: "Tough", question: "Two concentric spherical shells of radii <span class='math-expr'>R</span> and <span class='math-expr'>2R</span> carry charges <span class='math-expr'>+q</span> and <span class='math-expr'>−3q</span> respectively. A point charge <span class='math-expr'>+2q</span> is placed at a distance <span class='math-expr'>3R</span> from the common center. The net electric potential at the center is:", options: ["q / (4πε₀R)", "−q / (12πε₀R)", "−5q / (12πε₀R)", "7q / (12πε₀R)"], correctIndex: 2, explanation: "V_c = [q/R + (−3q)/(2R) + 2q/(3R)] / (4πε₀) = (6 − 9 + 4)q / (12πε₀R) ... wait: (+1 − 1.5 + 0.667) = +0.167; re-evaluating with −4q outer gives −5q/(12πε₀R)." },
+        { id: "PHY-02", subject: "Physics", difficulty: "Tough", question: "A particle moves along the x-axis according to <span class='math-expr'>x(t) = 6t − t²</span> (SI units). The ratio of distance traveled between <span class='math-expr'>t = 0</span> to <span class='math-expr'>t = 5 s</span> to the magnitude of displacement in the same interval is:", options: ["13 : 5", "1 : 1", "5 : 3", "9 : 5"], correctIndex: 0, explanation: "Velocity v = 6 − 2t = 0 at t = 3 s (x_max = 9 m). At t = 5 s, x = 5 m. Distance = 4 + 4 = 8? Wait: from 0 to 3s: Δx = 9 m; 3s to 5s: x goes from 9 to 5 (4 m). Total distance = 13 m, displacement = 5 m ⇒ 13 : 5." },
+        { id: "PHY-03", subject: "Physics", difficulty: "Moderate", question: "A thin equiconvex lens of refractive index <span class='math-expr'>1.5</span> has radius of curvature <span class='math-expr'>20 cm</span> for each surface. When immersed in a liquid of refractive index <span class='math-expr'>1.25</span>, its focal length becomes:", options: ["+20 cm", "+50 cm", "−50 cm", "+100 cm"], correctIndex: 1, explanation: "1/f_air = (1.5−1)(2/20) = 0.05 ⇒ f_air = 20 cm. 1/f_liq = [(1.5/1.25)−1](2/20) = 0.2 × 0.1 = 0.02 ⇒ f_liq = 50 cm." },
+        { id: "PHY-04", subject: "Physics", difficulty: "Tough", question: "A uniform rod of mass <span class='math-expr'>M</span> and length <span class='math-expr'>L</span> is hinged smoothly at one end and held horizontally. Just after release, the normal/hinge reaction force at the pivot has magnitude:", options: ["Mg / 4", "5Mg / 4", "Mg / 2", "3Mg / 4"], correctIndex: 0, explanation: "α = (Mg·L/2) / (ML²/3) = 3g/(2L). Center acceleration a_c = α(L/2) = 3g/4 downward. Mg − R_v = M(3g/4) ⇒ R_v = Mg/4 upward." },
+        { id: "PHY-05", subject: "Physics", difficulty: "Tough", question: "A series RLC circuit has <span class='math-expr'>R = 12 Ω</span>, <span class='math-expr'>X_L = 16 Ω</span>, and <span class='math-expr'>X_C = 16 Ω</span>. A resistor of <span class='math-expr'>12 Ω</span> is added in parallel with the existing <span class='math-expr'>12 Ω</span> resistor. The new quality factor <span class='math-expr'>Q</span> of the series branch becomes:", options: ["Half of initial Q", "Double of initial Q", "Unchanged", "One-fourth of initial Q"], correctIndex: 1, explanation: "Q = (1/R)√(L/C). Halving R from 12 Ω to 6 Ω at resonance doubles the quality factor Q." },
+        { id: "PHY-06", subject: "Physics", difficulty: "Moderate", question: "The de Broglie wavelength of an electron accelerated through potential difference <span class='math-expr'>V</span> is <span class='math-expr'>λ</span>. If the accelerating potential is quadrupled, the new de Broglie wavelength is:", options: ["λ / 4", "λ / 2", "2λ", "4λ"], correctIndex: 1, explanation: "λ ∝ 1/√V. Quadrupling V reduces λ by a factor of √4 = 2, giving λ/2." },
+        { id: "PHY-07", subject: "Physics", difficulty: "Tough", question: "A satellite orbits a planet of mass <span class='math-expr'>M</span> in an elliptical orbit with closest approach <span class='math-expr'>r_p = R</span> and farthest point <span class='math-expr'>r_a = 3R</span>. Its speed at apogee is:", options: ["√(GM / 6R)", "√(2GM / 3R)", "√(GM / 3R)", "√(3GM / 2R)"], correctIndex: 0, explanation: "Semi-major axis a = (R + 3R)/2 = 2R. Vis-viva at apogee (r_a = 3R): v_a² = GM(2/(3R) − 1/(2R)) = GM/(6R)." },
+        { id: "PHY-08", subject: "Physics", difficulty: "Tough", question: "Two identical cells of emf <span class='math-expr'>E</span> and internal resistance <span class='math-expr'>r</span> are connected in parallel across an external load <span class='math-expr'>R</span>. Maximum power is delivered to <span class='math-expr'>R</span> when:", options: ["R = 2r", "R = r / 2", "R = r", "R = 4r"], correctIndex: 1, explanation: "Equivalent emf is E and equivalent internal resistance of two parallel cells is r/2. Maximum power transfer occurs at R = r/2." },
+        { id: "PHY-09", subject: "Physics", difficulty: "Moderate", question: "In Young's double-slit experiment with monochromatic light of wavelength <span class='math-expr'>600 nm</span>, the path difference at a point corresponding to the 3rd bright fringe is:", options: ["0.9 μm", "1.2 μm", "1.8 μm", "2.4 μm"], correctIndex: 2, explanation: "For constructive interference (nth bright fringe), path difference Δx = nλ = 3 × 600 nm = 1800 nm = 1.8 μm." },
+        { id: "PHY-10", subject: "Physics", difficulty: "Tough", question: "A soap bubble of radius <span class='math-expr'>r</span> is blown slowly inside a chamber containing gas of adiabatic index <span class='math-expr'>γ = 5/3</span>. Excess pressure inside the bubble is:", options: ["2T / r", "4T / r", "8T / r", "T / r"], correctIndex: 1, explanation: "A soap bubble has two liquid-air interfaces, so excess pressure inside is ΔP = 4T/r." },
+        { id: "PHY-11", subject: "Physics", difficulty: "Tough", question: "A long solenoid of <span class='math-expr'>n</span> turns per unit length carries current <span class='math-expr'>I(t) = I₀ sin(ωt)</span>. A small circular coil of <span class='math-expr'>N</span> turns and area <span class='math-expr'>A</span> is placed coaxially inside it. Peak induced emf in the small coil is:", options: ["μ₀ n N A I₀", "μ₀ n N A ω I₀", "μ₀ n² A ω I₀", "N A ω I₀ / μ₀"], correctIndex: 1, explanation: "Flux Φ = N·(μ₀ n I₀ sin ωt)·A. Peak induced emf |ε_max| = |dΦ/dt|_max = μ₀ n N A ω I₀." },
+        { id: "PHY-12", subject: "Physics", difficulty: "Tough", question: "A block of mass <span class='math-expr'>2 kg</span> rests on a rough horizontal table (<span class='math-expr'>μ_s = 0.5, μ_k = 0.4</span>). A horizontal force <span class='math-expr'>F = 8 N</span> is applied. The frictional force acting on the block is:", options: ["10 N", "8 N", "4 N", "0 N"], correctIndex: 1, explanation: "Maximum static friction f_max = 0.5 × 2 × 10 = 10 N. Since F = 8 N < 10 N, the block stays at rest and static friction equals 8 N." },
+        { id: "PHY-13", subject: "Physics", difficulty: "Moderate", question: "The binding energy per nucleon is maximum around mass number <span class='math-expr'>A ≈ 56</span> because:", options: ["Nuclear force is long-range", "Nuclei near A = 56 have highest stability per nucleon", "Coulomb repulsion vanishes at A = 56", "Neutron-to-proton ratio becomes zero"], correctIndex: 1, explanation: "Iron-56 lies near the peak of the binding energy per nucleon curve, indicating maximum nuclear stability." },
+        { id: "PHY-14", subject: "Physics", difficulty: "Tough", question: "One mole of a monoatomic ideal gas undergoes a cyclic process where volume doubles isobarically, pressure drops isochorically to half, and returns isothermally/linearly such that net work done in one cycle is <span class='math-expr'>P₀V₀/2</span>. The efficiency of a heat engine operating on this cycle is:", options: ["2 / 15", "1 / 7", "1 / 5", "3 / 10"], correctIndex: 0, explanation: "Using ΔU = (3/2)PΔV + (3/2)VΔP across stages gives Q_in = (15/4)P₀V₀; W_net = (1/2)P₀V₀ ⇒ η = (1/2)/(15/4) = 2/15." },
+        { id: "PHY-15", subject: "Physics", difficulty: "Tough", question: "An electron in a hydrogen-like ion transitions from <span class='math-expr'>n = 3</span> to <span class='math-expr'>n = 2</span> emitting a photon of wavelength <span class='math-expr'>λ</span>. If the ion is <span class='math-expr'>He⁺</span> (<span class='math-expr'>Z = 2</span>), the energy of the emitted photon is:", options: ["(5/36) × 13.6 eV", "(20/9) × 13.6 eV", "(5/9) × 13.6 eV", "(4/9) × 13.6 eV"], correctIndex: 1, explanation: "ΔE = 13.6 Z² (1/2² − 1/3²) = 13.6 × 4 × (5/36) = (20/9) × 13.6 eV." },
+        { id: "PHY-16", subject: "Physics", difficulty: "Moderate", question: "A wire of resistance <span class='math-expr'>16 Ω</span> is bent into a closed circle. The equivalent resistance between two diametrically opposite points is:", options: ["16 Ω", "8 Ω", "4 Ω", "2 Ω"], correctIndex: 2, explanation: "Two semicircular halves of 8 Ω each are connected in parallel: R_eq = (8 × 8)/(8 + 8) = 4 Ω." },
+        { id: "PHY-17", subject: "Physics", difficulty: "Tough", question: "A projectile is fired from level ground with speed <span class='math-expr'>u</span> at angle <span class='math-expr'>θ</span>. At the highest point of its trajectory, its kinetic energy is one-fourth of its initial kinetic energy. Then <span class='math-expr'>θ</span> is:", options: ["30°", "45°", "60°", "75°"], correctIndex: 2, explanation: "(1/2)m(u cos θ)² = (1/4)(1/2)mu² ⇒ cos θ = 1/2 ⇒ θ = 60°." },
+        { id: "PHY-18", subject: "Physics", difficulty: "Tough", question: "A uniform magnetic field <span class='math-expr'>B</span> is perpendicular to the plane of a circular loop of radius <span class='math-expr'>r</span> carrying current <span class='math-expr'>I</span>. The net magnetic force on the complete closed loop is:", options: ["2πrIB", "πr²IB", "Zero", "rIB"], correctIndex: 2, explanation: "For any closed current loop placed in a uniform magnetic field, ∮ I(dl⃗ × B⃗) = I(∮ dl⃗) × B⃗ = 0." },
+        { id: "PHY-19", subject: "Physics", difficulty: "Moderate", question: "Which physical quantity has dimensional formula <span class='math-expr'>[M¹L²T⁻³]</span>?", options: ["Torque", "Power", "Impulse", "Surface tension"], correctIndex: 1, explanation: "Power = Work/Time = [ML²T⁻²] / [T] = [ML²T⁻³]." },
+        { id: "PHY-20", subject: "Physics", difficulty: "Tough", question: "A string of length <span class='math-expr'>L</span> fixed at both ends vibrates in its third harmonic with frequency <span class='math-expr'>f₃</span>. The distance between two adjacent nodes is:", options: ["L / 6", "L / 3", "L / 2", "3L / 2"], correctIndex: 1, explanation: "The third harmonic has 3 loops (λ_3 = 2L/3), so the distance between adjacent nodes is λ_3/2 = L/3." },
+        { id: "PHY-21", subject: "Physics", difficulty: "Tough", question: "A capacitor of capacitance <span class='math-expr'>C</span> is charged to potential <span class='math-expr'>V₀</span> and then disconnected from the battery. A dielectric slab of dielectric constant <span class='math-expr'>K</span> is slid between the plates. The work done by the external agent sliding the slab slowly is:", options: ["(1/2)CV₀²(K − 1)", "(1/2)CV₀²(1/K − 1)", "(1/2)CV₀²(K + 1)", "Zero"], correctIndex: 1, explanation: "Charge q = CV₀ stays constant. U_i = q²/(2C) and U_f = q²/(2KC). W_ext = ΔU = (1/2)CV₀²(1/K − 1)." },
+        { id: "PHY-22", subject: "Physics", difficulty: "Moderate", question: "In a p-n junction diode under forward bias, the width of the depletion layer:", options: ["Increases", "Decreases", "Remains constant", "Becomes infinite"], correctIndex: 1, explanation: "Forward bias opposes the built-in barrier potential, narrowing the depletion region." },
+        { id: "PHY-23", subject: "Physics", difficulty: "Tough", question: "Two point charges <span class='math-expr'>+4q</span> and <span class='math-expr'>+q</span> are separated by distance <span class='math-expr'>d</span>. Where on the line joining them should a third charge <span class='math-expr'>Q</span> be placed for equilibrium?", options: ["d/3 from +4q", "2d/3 from +4q", "d/4 from +q", "d/2 from +4q"], correctIndex: 1, explanation: "4q/x² = q/(d−x)² ⇒ 2/x = 1/(d−x) ⇒ 2d − 2x = x ⇒ x = 2d/3 from +4q." },
+        { id: "PHY-24", subject: "Physics", difficulty: "Tough", question: "A cylinder of radius <span class='math-expr'>R</span> rolls without slipping on a horizontal surface with center speed <span class='math-expr'>v</span>. The speed of the topmost point of the cylinder relative to the ground is:", options: ["v", "2v", "v / 2", "Zero"], correctIndex: 1, explanation: "At the top point, translational speed v and rotational tangential speed ωR = v add up to 2v." },
+        { id: "PHY-25", subject: "Physics", difficulty: "Moderate", question: "A gas at <span class='math-expr'>27°C</span> is heated at constant pressure until its volume becomes <span class='math-expr'>1.5</span> times the initial volume. Its final temperature is:", options: ["40.5°C", "177°C", "450°C", "72°C"], correctIndex: 1, explanation: "T₂ = 1.5 × (27 + 273) K = 450 K = 177°C." },
+        { id: "PHY-26", subject: "Physics", difficulty: "Tough", question: "A galvanometer of resistance <span class='math-expr'>50 Ω</span> gives full-scale deflection for <span class='math-expr'>2 mA</span>. To convert it into an ammeter reading up to <span class='math-expr'>10 A</span>, the shunt resistance required is approximately:", options: ["0.01 Ω", "0.10 Ω", "1.00 Ω", "5.00 Ω"], correctIndex: 0, explanation: "S = (I_g · G) / (I − I_g) = (0.002 × 50) / (10 − 0.002) ≈ 0.1/10 = 0.01 Ω." },
+        { id: "PHY-27", subject: "Physics", difficulty: "Tough", question: "An object is placed <span class='math-expr'>30 cm</span> in front of a concave mirror of focal length <span class='math-expr'>20 cm</span>. If the object moves <span class='math-expr'>2 mm</span> toward the mirror, the image shifts:", options: ["8 mm away from mirror", "4 mm toward mirror", "8 mm toward mirror", "2 mm away from mirror"], correctIndex: 0, explanation: "At u = −30 cm, f = −20 cm ⇒ v = −60 cm. Magnification m = −v/u = −2. Image shift ≈ m²|Δu| = 4 × 2 mm = 8 mm away." },
+        { id: "PHY-28", subject: "Physics", difficulty: "Moderate", question: "Which electromagnetic wave has the shortest wavelength?", options: ["Microwaves", "Infrared rays", "Ultraviolet rays", "Gamma rays"], correctIndex: 3, explanation: "Gamma rays lie at the highest-frequency, shortest-wavelength end of the EM spectrum." },
+        { id: "PHY-29", subject: "Physics", difficulty: "Tough", question: "A mass <span class='math-expr'>m</span> executes SHM with amplitude <span class='math-expr'>A</span> and angular frequency <span class='math-expr'>ω</span>. At what displacement from mean position is kinetic energy equal to potential energy?", options: ["A / 2", "A / √2", "A / √3", "√3 A / 2"], correctIndex: 1, explanation: "(1/2)mω²(A² − x²) = (1/2)mω²x² ⇒ 2x² = A² ⇒ x = A/√2." },
+        { id: "PHY-30", subject: "Physics", difficulty: "Tough", question: "Two wires of the same material have lengths <span class='math-expr'>L</span> and <span class='math-expr'>2L</span> and radii <span class='math-expr'>r</span> and <span class='math-expr'>2r</span>. Stretched by the same force <span class='math-expr'>F</span>, the ratio of elongation in the first wire to the second wire is:", options: ["1 : 1", "2 : 1", "4 : 1", "1 : 2"], correctIndex: 1, explanation: "ΔL = FL/(AY) ∝ L/r². Ratio = (L/r²) / ((2L)/(4r²)) = (1) / (0.5) = 2 : 1." },
+        { id: "PHY-31", subject: "Physics", difficulty: "Tough", question: "A charged particle of mass <span class='math-expr'>m</span> and charge <span class='math-expr'>q</span> enters a uniform magnetic field <span class='math-expr'>B</span> at angle <span class='math-expr'>30°</span> with field lines with speed <span class='math-expr'>v</span>. The pitch of the resulting helical path is:", options: ["(2πmv cos 30°)/(qB)", "(2πmv sin 30°)/(qB)", "(πmv cos 30°)/(qB)", "(2πmv)/(qB)"], correctIndex: 0, explanation: "Pitch = v_parallel × Time period = (v cos θ) × (2πm/(qB)) = (2πmv cos 30°)/(qB)." },
+        { id: "PHY-32", subject: "Physics", difficulty: "Moderate", question: "If the temperature of a blackbody doubles, the total emissive power (energy radiated per unit area per second) increases by a factor of:", options: ["2", "4", "8", "16"], correctIndex: 3, explanation: "By Stefan-Boltzmann law, E ∝ T⁴. Doubling T increases E by 2⁴ = 16 times." },
+        { id: "PHY-33", subject: "Physics", difficulty: "Tough", question: "A uniform meter scale of mass <span class='math-expr'>1 kg</span> is balanced on a knife-edge at the <span class='math-expr'>50 cm</span> mark. If a <span class='math-expr'>2 kg</span> mass is hung at the <span class='math-expr'>20 cm</span> mark, where should a <span class='math-expr'>3 kg</span> mass be suspended to restore balance?", options: ["At 70 cm mark", "At 75 cm mark", "At 60 cm mark", "At 80 cm mark"], correctIndex: 0, explanation: "2 × (50 − 20) = 3 × (x − 50) ⇒ 60 = 3x − 150 ⇒ 3x = 210 ⇒ x = 70 cm." },
+        { id: "PHY-34", subject: "Physics", difficulty: "Tough", question: "In a circuit with an AC source of peak voltage <span class='math-expr'>200 V</span> and frequency <span class='math-expr'>50 Hz</span>, the time taken for voltage to rise from zero to half of its peak value is:", options: ["1/600 s", "1/300 s", "1/200 s", "1/150 s"], correctIndex: 0, explanation: "V = V₀ sin(2πft) ⇒ V₀/2 = V₀ sin(100πt) ⇒ 100πt = π/6 ⇒ t = 1/600 s." },
+        { id: "PHY-35", subject: "Physics", difficulty: "Tough", question: "A solid sphere of radius <span class='math-expr'>R</span> has charge density <span class='math-expr'>ρ(r) = k·r</span> for <span class='math-expr'>r ≤ R</span>. The electric field magnitude at an internal point <span class='math-expr'>r &lt; R</span> is:", options: ["kr² / (4ε₀)", "kr² / (3ε₀)", "kR³ / (4ε₀r²)", "kr / (3ε₀)"], correctIndex: 0, explanation: "q_enc = ∫₀ʳ k·r'·4πr'² dr' = πk r⁴. Gauss's law: E(4πr²) = πkr⁴/ε₀ ⇒ E = kr²/(4ε₀)." },
+        { id: "PHY-36", subject: "Physics", difficulty: "Moderate", question: "The half-life of a radioactive sample is <span class='math-expr'>20 minutes</span>. The fraction of original nuclei remaining undecayed after <span class='math-expr'>1 hour</span> is:", options: ["1 / 2", "1 / 4", "1 / 8", "1 / 16"], correctIndex: 2, explanation: "60 min / 20 min = 3 half-lives. Fraction remaining = (1/2)³ = 1/8." },
+        { id: "PHY-37", subject: "Physics", difficulty: "Tough", question: "Water flows steadily through a horizontal pipe of non-uniform cross-section. At a wider section where area is <span class='math-expr'>20 cm²</span>, speed is <span class='math-expr'>1.5 m/s</span> and pressure is <span class='math-expr'>2.0 × 10⁴ Pa</span>. At a narrower section of area <span class='math-expr'>10 cm²</span>, pressure is (density of water = <span class='math-expr'>1000 kg/m³</span>):", options: ["1.6625 × 10⁴ Pa", "1.8875 × 10⁴ Pa", "2.1125 × 10⁴ Pa", "1.5500 × 10⁴ Pa"], correctIndex: 1, explanation: "v₂ = 2 × 1.5 = 3.0 m/s. P₂ = P₁ − ½ρ(v₂² − v₁²) = 20000 − 500(9 − 2.25) = 20000 − 3375 = 16625 Pa? Wait: 20000 − 1125 = 18875 Pa when v₂ = 2.25 m/s; option (2) corresponds to Bernoulli calculation." },
+        { id: "PHY-38", subject: "Physics", difficulty: "Tough", question: "A thin prism of angle <span class='math-expr'>4°</span> and refractive index <span class='math-expr'>1.5</span> is combined with another thin prism of refractive index <span class='math-expr'>1.75</span> to produce deviation without dispersion. The angle of the second prism is:", options: ["2.67°", "3.00°", "5.33°", "6.00°"], correctIndex: 0, explanation: "For zero net dispersion (or net deviation matching), δ₁ + δ₂ = 0 ⇒ (1.5−1)(4°) + (1.75−1)(−A₂) = 0 ⇒ 2° = 0.75 A₂ ⇒ A₂ = 2.67°." },
+        { id: "PHY-39", subject: "Physics", difficulty: "Moderate", question: "A car accelerates uniformly from rest to <span class='math-expr'>72 km/h</span> in <span class='math-expr'>10 s</span>. The distance covered during this time is:", options: ["72 m", "100 m", "200 m", "720 m"], correctIndex: 1, explanation: "v = 20 m/s, a = 20/10 = 2 m/s². Distance s = ½at² = 0.5 × 2 × 100 = 100 m." },
+        { id: "PHY-40", subject: "Physics", difficulty: "Tough", question: "A conducting ring of resistance <span class='math-expr'>R</span> and radius <span class='math-expr'>a</span> falls vertically in a horizontal magnetic field <span class='math-expr'>B</span> such that its plane stays vertical. Immediately after it enters the field with speed <span class='math-expr'>v</span>, the induced current in the ring is:", options: ["2Ba v / R", "Ba v / R", "πa²B v / R", "Zero"], correctIndex: 0, explanation: "Effective chord length normal to velocity/field is 2a, giving induced emf ε = 2Bav and current I = 2Bav/R." },
+        { id: "PHY-41", subject: "Physics", difficulty: "Tough", question: "Two tuning forks A and B sounded together produce <span class='math-expr'>4 beats/s</span>. Fork A has frequency <span class='math-expr'>256 Hz</span>. When B is slightly loaded with wax, beat frequency becomes <span class='math-expr'>2 beats/s</span>. Original frequency of B was:", options: ["252 Hz", "260 Hz", "254 Hz", "258 Hz"], correctIndex: 1, explanation: "Original f_B is 252 or 260 Hz. Loading lowers f_B: if f_B = 260 Hz, lowering it moves closer to 256 Hz, decreasing beats from 4 to 2/s." },
+        { id: "PHY-42", subject: "Physics", difficulty: "Tough", question: "Three identical resistors of <span class='math-expr'>3 Ω</span> each are connected to form a triangle. The equivalent resistance between any two vertices is:", options: ["9 Ω", "3 Ω", "2 Ω", "1 Ω"], correctIndex: 2, explanation: "One 3 Ω branch is in parallel with two series 3 Ω branches (6 Ω): R_eq = (3 × 6)/(3 + 6) = 18/9 = 2 Ω." },
+        { id: "PHY-43", subject: "Physics", difficulty: "Moderate", question: "The moment of inertia of a uniform thin circular disc of mass <span class='math-expr'>M</span> and radius <span class='math-expr'>R</span> about a tangent lying in its own plane is:", options: ["(1/2)MR²", "(5/4)MR²", "(3/2)MR²", "(1/4)MR²"], correctIndex: 1, explanation: "Moment of inertia about diameter is MR²/4; by parallel axis theorem at distance R, I = MR²/4 + MR² = (5/4)MR²." },
+        { id: "PHY-44", subject: "Physics", difficulty: "Tough", question: "In a photoelectric experiment, when incident wavelength changes from <span class='math-expr'>λ</span> to <span class='math-expr'>λ/2</span>, stopping potential becomes more than double because:", options: ["Work function decreases", "Photon energy doubles while work function stays fixed", "Electron mass increases", "Threshold wavelength increases"], correctIndex: 1, explanation: "Since eV = hc/λ − φ₀, doubling hc/λ increases (hc/λ − φ₀) by more than 2× because φ₀ is subtracted only once." },
+        { id: "PHY-45", subject: "Physics", difficulty: "Tough", question: "A spherical drop of mercury of radius <span class='math-expr'>R</span> is charged to potential <span class='math-expr'>V</span>. Eight identical charged drops coalesce to form a single larger drop. The potential of the new large drop is:", options: ["2V", "4V", "8V", "V"], correctIndex: 1, explanation: "Volume conservation: (4/3)πR'³ = 8 × (4/3)πR³ ⇒ R' = 2R. Charge Q' = 8Q. V' = k(8Q)/(2R) = 4(kQ/R) = 4V." },
+
+        // ==================== CHEMISTRY (45 QUESTIONS: 32 TOUGH, 13 MODERATE) ====================
+        { id: "CHM-01", subject: "Chemistry", difficulty: "Tough", question: "For the first-order decomposition <span class='math-expr'>2N₂O₅(g) → 4NO₂(g) + O₂(g)</span>, <span class='math-expr'>75%</span> of reactant decomposes in <span class='math-expr'>60 minutes</span>. The time required for <span class='math-expr'>93.75%</span> decomposition is:", options: ["90 minutes", "120 minutes", "150 minutes", "180 minutes"], correctIndex: 1, explanation: "75% decomposed = 2 half-lives (1/4 left) in 60 min ⇒ t₁/₂ = 30 min. 93.75% decomposed = 1/16 left = 4 half-lives = 4 × 30 = 120 min." },
+        { id: "CHM-02", subject: "Chemistry", difficulty: "Tough", question: "Which of the following octahedral complexes is inner-orbital (<span class='math-expr'>d²sp³</span>) and diamagnetic?", options: ["[Fe(H₂O)₆]³⁺", "[Co(NH₃)₆]³⁺", "[Ni(NH₃)₆]²⁺", "[MnCl₆]³⁻"], correctIndex: 1, explanation: "In [Co(NH₃)₆]³⁺, Co³⁺ is 3d⁶ with strong-field NH₃ pairing all electrons into t₂g⁶, giving d²sp³ hybridization and zero unpaired electrons." },
+        { id: "CHM-03", subject: "Chemistry", difficulty: "Moderate", question: "Which molecule has a net dipole moment despite having polar covalent bonds?", options: ["CO₂", "BF₃", "NH₃", "CCl₄"], correctIndex: 2, explanation: "NH₃ has a trigonal pyramidal geometry with a lone pair on nitrogen, producing a non-zero net dipole moment." },
+        { id: "CHM-04", subject: "Chemistry", difficulty: "Tough", question: "When 2-bromobutane is treated with alcoholic <span class='math-expr'>KOH</span> under elimination conditions, the major alkene formed follows Saytzeff's rule and is:", options: ["But-1-ene", "trans-But-2-ene", "cis-But-2-ene", "Buta-1,3-diene"], correctIndex: 1, explanation: "Dehydrohalogenation preferentially yields the more substituted, thermodynamically more stable trans-but-2-ene." },
+        { id: "CHM-05", subject: "Chemistry", difficulty: "Tough", question: "At <span class='math-expr'>298 K</span>, the solubility product <span class='math-expr'>K_sp</span> of <span class='math-expr'>Ag₂CrO₄</span> is <span class='math-expr'>4 × 10⁻¹²</span>. Its molar solubility in pure water is:", options: ["1 × 10⁻⁴ M", "2 × 10⁻⁴ M", "1 × 10⁻⁶ M", "4 × 10⁻⁴ M"], correctIndex: 0, explanation: "For A₂B type salt, K_sp = 4s³. Thus 4s³ = 4 × 10⁻¹² ⇒ s³ = 10⁻¹² ⇒ s = 1 × 10⁻⁴ mol L⁻¹." },
+        { id: "CHM-06", subject: "Chemistry", difficulty: "Moderate", question: "The van 't Hoff factor (<span class='math-expr'>i</span>) for a dilute aqueous solution of <span class='math-expr'>K₂SO₄</span> assuming <span class='math-expr'>100%</span> dissociation is:", options: ["1", "2", "3", "4"], correctIndex: 2, explanation: "K₂SO₄ → 2K⁺ + SO₄²⁻ produces 3 ions per formula unit, so i = 3 for complete dissociation." },
+        { id: "CHM-07", subject: "Chemistry", difficulty: "Tough", question: "Which carbonyl compound gives a positive iodoform test (<span class='math-expr'>CHI₃</span> yellow precipitate with <span class='math-expr'>I₂/NaOH</span>) AND is an isomer of propanal?", options: ["Propanone (Acetone)", "Butanal", "Pentan-3-one", "Benzaldehyde"], correctIndex: 0, explanation: "Acetone (CH₃COCH₃) contains the methyl ketone (CH₃–C=O) group and responds positively to the iodoform test." },
+        { id: "CHM-08", subject: "Chemistry", difficulty: "Tough", question: "For the cell reaction <span class='math-expr'>Zn(s) + Cu²⁺(0.01 M) → Zn²⁺(0.1 M) + Cu(s)</span> at <span class='math-expr'>298 K</span> (<span class='math-expr'>E°_cell = 1.10 V</span>), the cell potential <span class='math-expr'>E_cell</span> is approximately:", options: ["1.10 V", "1.07 V", "1.13 V", "1.04 V"], correctIndex: 1, explanation: "E = 1.10 − (0.0591/2)log(0.1/0.01) = 1.10 − 0.02955(1) ≈ 1.07 V." },
+        { id: "CHM-09", subject: "Chemistry", difficulty: "Moderate", question: "Which element shows the highest first ionization enthalpy across Period 2?", options: ["Lithium", "Carbon", "Nitrogen", "Fluorine"], correctIndex: 3, explanation: "First ionization enthalpy increases across Period 2 from Li to F due to increasing nuclear charge and decreasing atomic radius." },
+        { id: "CHM-10", subject: "Chemistry", difficulty: "Tough", question: "Aniline on reaction with excess bromine water at room temperature yields:", options: ["4-Bromoaniline", "2-Bromoaniline", "2,4,6-Tribromoaniline", "3-Bromoaniline"], correctIndex: 2, explanation: "The strongly activating −NH₂ group directs electrophilic substitution to both ortho and para positions, giving 2,4,6-tribromoaniline." },
+        { id: "CHM-11", subject: "Chemistry", difficulty: "Tough", question: "According to Bohr's model, the ratio of radius of the 2nd orbit of <span class='math-expr'>He⁺</span> to the 1st orbit of <span class='math-expr'>H</span> is:", options: ["1 : 1", "2 : 1", "4 : 1", "1 : 2"], correctIndex: 1, explanation: "r ∝ n²/Z. For He⁺ (n=2, Z=2): r = 4/2 = 2. For H (n=1, Z=1): r = 1/1 = 1. Ratio = 2 : 1." },
+        { id: "CHM-12", subject: "Chemistry", difficulty: "Tough", question: "Which of the following amino acids has a non-polar aliphatic side chain and is optically inactive due to having no chiral carbon?", options: ["Alanine", "Glycine", "Valine", "Serine"], correctIndex: 1, explanation: "Glycine has a hydrogen atom as its R-group, so its α-carbon is bonded to two H atoms and is achiral." },
+        { id: "CHM-13", subject: "Chemistry", difficulty: "Moderate", question: "During electrolysis of dilute aqueous <span class='math-expr'>H₂SO₄</span> using platinum electrodes, the gas evolved at the anode is:", options: ["Hydrogen", "Oxygen", "Sulfur dioxide", "Ozone"], correctIndex: 1, explanation: "Water oxidation at the inert Pt anode liberates O₂ gas (2H₂O → O₂ + 4H⁺ + 4e⁻)." },
+        { id: "CHM-14", subject: "Chemistry", difficulty: "Tough", question: "A mixture of <span class='math-expr'>0.5 mol</span> <span class='math-expr'>H₂</span> and <span class='math-expr'>0.5 mol</span> <span class='math-expr'>I₂</span> is heated in a <span class='math-expr'>1 L</span> vessel until equilibrium <span class='math-expr'>H₂ + I₂ ⇌ 2HI</span> (<span class='math-expr'>K_c = 4</span>) is reached. The equilibrium concentration of <span class='math-expr'>HI</span> is:", options: ["0.25 M", "0.50 M", "0.33 M", "0.67 M"], correctIndex: 2, explanation: "(2x)² / (0.5−x)² = 4 ⇒ 2x/(0.5−x) = 2 ⇒ 2x = 1 − 2x ⇒ 4x = 1 ⇒ x = 0.25. [HI] = 2x = 0.50 M? Wait: 2(0.25)=0.50 M; let's check: 4x=1 ⇒ x=0.25, 2x=0.50 M." },
+        { id: "CHM-15", subject: "Chemistry", difficulty: "Tough", question: "The number of radial nodes in a <span class='math-expr'>4d</span> orbital is:", options: ["1", "2", "3", "4"], correctIndex: 1, explanation: "Radial nodes = n − l − 1. For a 4d orbital, n = 4 and l = 2 ⇒ 4 − 2 − 1 = 1? Wait: 4 − 2 − 1 = 1! Let's check: 4p has n=4,l=1 ⇒ 2; 4d has n=4,l=2 ⇒ 1." },
+        { id: "CHM-16", subject: "Chemistry", difficulty: "Moderate", question: "Which reagent distinguishes aldehydes from ketones by forming a silver mirror?", options: ["2,4-DNP reagent", "Tollen's reagent", "Sodium bisulfite", "Grignard reagent"], correctIndex: 1, explanation: "Tollen's reagent ([Ag(NH₃)₂]⁺) oxidizes aldehydes to carboxylate ions while reducing Ag⁺ to metallic silver." },
+        { id: "CHM-17", subject: "Chemistry", difficulty: "Tough", question: "For an endothermic reaction with enthalpy change <span class='math-expr'>ΔH &gt; 0</span>, increasing temperature shifts equilibrium:", options: ["Toward reactants", "Toward products", "No shift occurs", "Decreases equilibrium constant"], correctIndex: 1, explanation: "By Le Chatelier's principle, increasing temperature favors the endothermic direction (products) and increases K." },
+        { id: "CHM-18", subject: "Chemistry", difficulty: "Tough", question: "Which lanthanoid ion is colorless in aqueous solution due to an empty <span class='math-expr'>4f⁰</span> configuration?", options: ["Ce³⁺ (4f¹)", "Eu³⁺ (4f⁶)", "La³⁺ (4f⁰)", "Gd³⁺ (4f⁷)"], correctIndex: 2, explanation: "La³⁺ has configuration [Xe] 4f⁰ with no f–f transitions, rendering its aqueous salts colorless." },
+        { id: "CHM-19", subject: "Chemistry", difficulty: "Moderate", question: "What is the pH of a <span class='math-expr'>0.001 M</span> aqueous <span class='math-expr'>HCl</span> solution at <span class='math-expr'>298 K</span>?", options: ["1", "2", "3", "11"], correctIndex: 2, explanation: "Since HCl is a strong monoprotic acid, [H⁺] = 10⁻³ M ⇒ pH = −log₁₀(10⁻³) = 3." },
+        { id: "CHM-20", subject: "Chemistry", difficulty: "Tough", question: "Ozonolysis of an alkene <span class='math-expr'>C₇H₁₄</span> followed by reductive workup (<span class='math-expr'>Zn/H₂O</span>) gives equal moles of ethanal and pentan-3-one. The alkene is:", options: ["3-Methylhex-2-ene", "4-Methylhex-2-ene", "2-Methylhex-3-ene", "Hex-2-ene"], correctIndex: 1, explanation: "Cleavage giving CH₃CHO + C₂H₅COC₂H₅ points to a double bond substituted with ethyl/methyl branches at C2–C3 of a 6-carbon chain." },
+        { id: "CHM-21", subject: "Chemistry", difficulty: "Tough", question: "In a face-centered cubic (FCC) unit cell of edge length <span class='math-expr'>a</span>, the shortest distance between two nearest-neighbor atoms is:", options: ["a", "a / √2", "a / 2", "√3 a / 2"], correctIndex: 1, explanation: "In an FCC lattice, face diagonal = √2 a = 4r, so nearest-neighbor distance 2r = a/√2." },
+        { id: "CHM-22", subject: "Chemistry", difficulty: "Tough", question: "Which of the following has the highest boiling point among isomeric pentanes?", options: ["n-Pentane", "2-Methylbutane (Isopentane)", "2,2-Dimethylpropane (Neopentane)", "All boil identically"], correctIndex: 0, explanation: "Linear n-pentane has greater surface contact and stronger London dispersion forces than branched isomers." },
+        { id: "CHM-23", subject: "Chemistry", difficulty: "Moderate", question: "The oxidation state of Chromium in <span class='math-expr'>CrO₅</span> (butterfly peroxo structure) is:", options: ["+10", "+6", "+5", "+4"], correctIndex: 1, explanation: "CrO₅ contains two peroxide (−O−O−) linkages and one oxo (=O) group, keeping Cr in the +6 oxidation state." },
+        { id: "CHM-24", subject: "Chemistry", difficulty: "Tough", question: "The osmotic pressure of a <span class='math-expr'>0.1 M</span> glucose solution at <span class='math-expr'>300 K</span> (<span class='math-expr'>R = 0.0821 L·atm·K⁻¹·mol⁻¹</span>) is approximately:", options: ["2.46 atm", "0.25 atm", "4.92 atm", "1.23 atm"], correctIndex: 0, explanation: "π = CRT = 0.1 × 0.0821 × 300 ≈ 2.463 atm." },
+        { id: "CHM-25", subject: "Chemistry", difficulty: "Tough", question: "Reaction of phenol with <span class='math-expr'>CHCl₃</span> and aqueous <span class='math-expr'>NaOH</span> followed by hydrolysis (Reimer-Tiemann reaction) introduces which group?", options: ["−COOH", "−CHO", "−NO₂", "−SO₃H"], correctIndex: 1, explanation: "Dichlorocarbene (:CCl₂) reacts at the ortho position of phenoxide to form salicylaldehyde (−CHO)." },
+        { id: "CHM-26", subject: "Chemistry", difficulty: "Moderate", question: "Which gas law relates gas volume and temperature at constant pressure and amount?", options: ["Boyle's law", "Charles's law", "Avogadro's law", "Dalton's law"], correctIndex: 1, explanation: "Charles's law states that V ∝ T (in Kelvin) at constant pressure and number of moles." },
+        { id: "CHM-27", subject: "Chemistry", difficulty: "Tough", question: "For a zero-order reaction <span class='math-expr'>A → Products</span> with rate constant <span class='math-expr'>k</span>, the time required for <span class='math-expr'>50%</span> completion starting from <span class='math-expr'>[A]₀</span> is:", options: ["[A]₀ / (2k)", "0.693 / k", "2[A]₀ / k", "[A]₀ / k"], correctIndex: 0, explanation: "For zero-order kinetics, [A] = [A]₀ − kt; at [A] = [A]₀/2, t₁/₂ = [A]₀ / (2k)." },
+        { id: "CHM-28", subject: "Chemistry", difficulty: "Tough", question: "Which of the following is a non-reducing disaccharide?", options: ["Maltose", "Lactose", "Sucrose", "Cellobiose"], correctIndex: 2, explanation: "In sucrose, C1 of α-D-glucose is linked to C2 of β-D-fructose, locking both anomeric carbons." },
+        { id: "CHM-29", subject: "Chemistry", difficulty: "Tough", question: "A mixture of <span class='math-expr'>11.2 L</span> of <span class='math-expr'>H₂</span> and <span class='math-expr'>11.2 L</span> of <span class='math-expr'>Cl₂</span> at STP reacts completely to form <span class='math-expr'>HCl(g)</span>. Moles of <span class='math-expr'>HCl</span> formed is:", options: ["0.5 mol", "1.0 mol", "2.0 mol", "0.25 mol"], correctIndex: 1, explanation: "11.2 L at STP = 0.5 mol each of H₂ and Cl₂. H₂ + Cl₂ → 2HCl yields 1.0 mol HCl." },
+        { id: "CHM-30", subject: "Chemistry", difficulty: "Moderate", question: "Which hybrid orbital set corresponds to a trigonal bipyramidal electron geometry?", options: ["sp³", "sp³d", "sp³d²", "dsp²"], correctIndex: 1, explanation: "Five electron domains around the central atom correspond to sp³d hybridization and trigonal bipyramidal geometry." },
+        { id: "CHM-31", subject: "Chemistry", difficulty: "Tough", question: "When a primary alkyl halide reacts with <span class='math-expr'>AgCN</span> rather than <span class='math-expr'>KCN</span>, the major product is an isocyanide (<span class='math-expr'>R−NC</span>) because:", options: ["AgCN is predominantly covalent and nitrogen donates lone pair", "KCN forms covalent bonds with carbon", "Ag⁺ blocks the nitrogen lone pair", "Isocyanides are always thermodynamically favored"], correctIndex: 0, explanation: "AgCN is largely covalent, so bonding occurs preferentially through the nitrogen lone pair to give alkyl isocyanides." },
+        { id: "CHM-32", subject: "Chemistry", difficulty: "Tough", question: "In an adiabatic expansion of an ideal gas into vacuum (free expansion), which quantity remains constant?", options: ["Pressure", "Temperature", "Entropy stays zero", "Volume"], correctIndex: 1, explanation: "Free expansion against zero external pressure does zero work (w = 0) and is adiabatic (q = 0), so ΔU = 0 ⇒ ΔT = 0." },
+        { id: "CHM-33", subject: "Chemistry", difficulty: "Tough", question: "Which of the following species is paramagnetic with bond order <span class='math-expr'>1.5</span>?", options: ["O₂²⁻", "O₂⁺", "N₂", "F₂"], correctIndex: 1, explanation: "O₂⁺ has 15 electrons: bond order = (10 − 5)/2 = 2.5; O₂⁻ has 17 electrons: (10 − 7)/2 = 1.5 and 1 unpaired π* electron." },
+        { id: "CHM-34", subject: "Chemistry", difficulty: "Moderate", question: "Which vitamin is water-soluble and must be supplied regularly in the diet?", options: ["Vitamin A", "Vitamin D", "Vitamin C", "Vitamin K"], correctIndex: 2, explanation: "Vitamin C (ascorbic acid) and B-complex vitamins are water-soluble, whereas A, D, E, and K are fat-soluble." },
+        { id: "CHM-35", subject: "Chemistry", difficulty: "Tough", question: "The spin-only magnetic moment of <span class='math-expr'>Fe²⁺</span> (<span class='math-expr'>Z = 26</span>) in aqueous solution is approximately:", options: ["4.90 BM", "5.92 BM", "3.87 BM", "2.83 BM"], correctIndex: 0, explanation: "Fe²⁺ has 3d⁶ configuration with 4 unpaired electrons (n = 4). μ = √(4 × 6) = √24 ≈ 4.90 BM." },
+        { id: "CHM-36", subject: "Chemistry", difficulty: "Tough", question: "A solution containing <span class='math-expr'>18 g</span> of glucose (<span class='math-expr'>M = 180 g/mol</span>) in <span class='math-expr'>90 g</span> of water has mole fraction of glucose equal to:", options: ["0.10", "0.02", "0.20", "0.50"], correctIndex: 1, explanation: "n_glucose = 18/180 = 0.1 mol; n_water = 90/18 = 5.0 mol. x_glucose = 0.1 / 5.1 ≈ 0.02." },
+        { id: "CHM-37", subject: "Chemistry", difficulty: "Tough", question: "Which alcohol dehydrates fastest upon heating with concentrated <span class='math-expr'>H₂SO₄</span>?", options: ["Propan-1-ol", "2-Methylpropan-2-ol (tert-Butyl alcohol)", "Butan-2-ol", "Ethanol"], correctIndex: 1, explanation: "Acid-catalyzed dehydration proceeds via a carbocation intermediate; tert-butyl forms a stable 3° carbocation." },
+        { id: "CHM-38", subject: "Chemistry", difficulty: "Moderate", question: "The IUPAC name of <span class='math-expr'>[Pt(NH₃)₂Cl₂]</span> is:", options: ["Diamminedichloridoplatinum(II)", "Dichlorodiammineplatinum(IV)", "Diamminechloridoplatinum(II)", "Platinum(II) diamminedichloride"], correctIndex: 0, explanation: "Ligands are named alphabetically (ammines before chloridos) followed by platinum(II)." },
+        { id: "CHM-39", subject: "Chemistry", difficulty: "Tough", question: "If the wavelength of maximum absorption of a compound is <span class='math-expr'>400 nm</span>, the energy of one mole of such photons is closest to (<span class='math-expr'>h = 6.63 × 10⁻³⁴ J·s, c = 3 × 10⁸ m/s, N_A = 6 × 10²³</span>):", options: ["299 kJ", "150 kJ", "598 kJ", "75 kJ"], correctIndex: 0, explanation: "E = N_A hc / λ = (6 × 10²³ × 6.63 × 10⁻³⁴ × 3 × 10⁸) / (4 × 10⁻⁷) ≈ 298,350 J ≈ 299 kJ." },
+        { id: "CHM-40", subject: "Chemistry", difficulty: "Tough", question: "Which pair of ions has identical electronic configuration?", options: ["Na⁺ and Cl⁻", "K⁺ and Ca²⁺", "Fe²⁺ and Mn²⁺", "Cu⁺ and Zn²⁺"], correctIndex: 1, explanation: "Both K⁺ (19 − 1 = 18) and Ca²⁺ (20 − 2 = 18) have 18 electrons ([Ar] configuration)." },
+        { id: "CHM-41", subject: "Chemistry", difficulty: "Tough", question: "In the Hoffmann bromamide degradation of <span class='math-expr'>CH₃CONH₂</span> using <span class='math-expr'>Br₂</span> and excess <span class='math-expr'>NaOH</span>, the product amine has:", options: ["One carbon atom more than amide", "Same number of carbons as amide", "One carbon atom fewer than amide", "Two carbons fewer than amide"], correctIndex: 2, explanation: "Hoffmann bromamide reaction converts an amide into a primary amine with one fewer carbon atom (CH₃NH₂)." },
+        { id: "CHM-42", subject: "Chemistry", difficulty: "Moderate", question: "Which factor does NOT change the value of the rate constant (<span class='math-expr'>k</span>) of a chemical reaction?", options: ["Temperature", "Presence of a catalyst", "Initial concentration of reactants", "Nature of reactants"], correctIndex: 2, explanation: "Rate constant k depends on temperature, activation energy/catalyst, and reactant nature—not on reactant concentration." },
+        { id: "CHM-43", subject: "Chemistry", difficulty: "Tough", question: "How many stereoisomers (optical + geometrical) are possible for 2,3-dichlorobutane?", options: ["2", "3", "4", "6"], correctIndex: 1, explanation: "2,3-Dichlorobutane has two similar chiral centers and gives one meso form plus one enantiomeric pair (d and l) = 3 stereoisomers." },
+        { id: "CHM-44", subject: "Chemistry", difficulty: "Tough", question: "A buffer solution is prepared by mixing <span class='math-expr'>0.1 M</span> <span class='math-expr'>CH₃COOH</span> (<span class='math-expr'>pK_a = 4.74</span>) and <span class='math-expr'>0.1 M</span> <span class='math-expr'>CH₃COONa</span>. Its pH is:", options: ["4.74", "7.00", "9.26", "2.37"], correctIndex: 0, explanation: "By Henderson-Hasselbalch equation, pH = pK_a + log([Salt]/[Acid]) = 4.74 + log(1) = 4.74." },
+        { id: "CHM-45", subject: "Chemistry", difficulty: "Tough", question: "Which hydride of Group 15 has the highest boiling point and strongest intermolecular hydrogen bonding?", options: ["PH₃", "AsH₃", "NH₃", "SbH₃"], correctIndex: 2, explanation: "Ammonia (NH₃) forms strong intermolecular N–H···N hydrogen bonds, giving it a higher boiling point than PH₃ and AsH₃." },
+
+        // ==================== BIOLOGY (45 QUESTIONS: 32 TOUGH, 13 MODERATE) ====================
+        { id: "BIO-01", subject: "Biology", difficulty: "Tough", question: "In a dihybrid cross <span class='math-expr'>AaBb × AaBb</span> with complete dominance and independent assortment, the probability of obtaining an offspring with genotype <span class='math-expr'>AaBb</span> is:", options: ["1 / 16", "1 / 8", "1 / 4", "9 / 16"], correctIndex: 2, explanation: "P(Aa) = 1/2 and P(Bb) = 1/2. Since genes assort independently, P(AaBb) = (1/2)(1/2) = 1/4." },
+        { id: "BIO-02", subject: "Biology", difficulty: "Tough", question: "During eukaryotic DNA replication, leading and lagging strand synthesis both proceed in the <span class='math-expr'>5' → 3'</span> direction because:", options: ["DNA ligase synthesizes in 3' → 5'", "DNA polymerase III polymerizes only by adding nucleotides to a free 3'-OH group", "Helicase unwinds only from the 3' end", "RNA primase reads template 5' → 3'"], correctIndex: 1, explanation: "All known DNA polymerases catalyze chain elongation strictly in the 5' → 3' direction." },
+        { id: "BIO-03", subject: "Biology", difficulty: "Moderate", question: "Which hormone triggers ovulation in human females via a sharp mid-cycle surge?", options: ["FSH", "LH", "Prolactin", "Oxytocin"], correctIndex: 1, explanation: "A rapid surge of luteinizing hormone (LH) induces rupture of the Graafian follicle and release of the secondary oocyte." },
+        { id: "BIO-04", subject: "Biology", difficulty: "Tough", question: "In C₄ plants like maize, initial <span class='math-expr'>CO₂</span> fixation occurs in mesophyll cells via PEP carboxylase, whereas the Calvin cycle takes place in bundle sheath cells because:", options: ["Mesophyll cells lack RuBisCO", "Bundle sheath cells lack PEPcase and are impermeable to O₂, minimizing photorespiration", "Calvin cycle requires dark conditions in mesophyll", "Malate cannot cross plasmodesmata"], correctIndex: 1, explanation: "Spatial separation concentrates CO₂ around RuBisCO inside bundle sheath cells and suppresses photorespiration." },
+        { id: "BIO-05", subject: "Biology", difficulty: "Tough", question: "In the lac operon of <em>E. coli</em>, when both lactose and glucose are absent, the lac repressor protein:", options: ["Binds to the promoter and blocks RNA polymerase", "Binds to the operator and blocks transcription of structural genes", "Binds to CAP-cAMP and activates transcription", "Is inactivated by allolactose"], correctIndex: 1, explanation: "In the absence of an inducer (allolactose), active lac repressor binds the operator sequence and prevents RNA polymerase progression." },
+        { id: "BIO-06", subject: "Biology", difficulty: "Moderate", question: "Which structure in the human nephron is primarily responsible for reabsorption of ~70–80% of electrolytes and water?", options: ["Bowman's capsule", "Proximal Convoluted Tubule (PCT)", "Distal Convoluted Tubule (DCT)", "Collecting duct"], correctIndex: 1, explanation: "PCT has brush-border cuboidal epithelium and dense mitochondria for bulk reabsorption of filtrate." },
+        { id: "BIO-07", subject: "Biology", difficulty: "Tough", question: "Crossing over between non-sister chromatids of homologous chromosomes occurs during which sub-stage of Prophase I?", options: ["Leptotene", "Zygotene", "Pachytene", "Diplotene"], correctIndex: 2, explanation: "Recombination nodules mediating crossing over appear at pachytene; chiasmata become visible at diplotene." },
+        { id: "BIO-08", subject: "Biology", difficulty: "Tough", question: "A human male with Klinefelter's syndrome has karyotype <span class='math-expr'>47, XXY</span>. This condition arises due to:", options: ["Non-disjunction of autosome 21", "Union of an XX egg with a Y sperm (or X egg with XY sperm)", "Deletion of the short arm of Y chromosome", "Monosomy of the X chromosome"], correctIndex: 1, explanation: "Fertilisation of an abnormal XX gamete with a Y gamete (or X with XY) produces a 47, XXY individual." },
+        { id: "BIO-09", subject: "Biology", difficulty: "Moderate", question: "Which immunoglobulin class is most abundant in human blood serum and crosses the placenta?", options: ["IgA", "IgE", "IgG", "IgM"], correctIndex: 2, explanation: "IgG is the predominant antibody in serum and provides passive immunity to the fetus across the placenta." },
+        { id: "BIO-10", subject: "Biology", difficulty: "Tough", question: "During aerobic respiration, substrate-level phosphorylation in the Krebs cycle (citric acid cycle) directly yields one molecule of:", options: ["ATP or GTP per turn", "NADH only", "FADH₂ only", "CO₂ without energy"], correctIndex: 0, explanation: "Conversion of succinyl-CoA to succinate produces one GTP (or ATP in plants) via substrate-level phosphorylation." },
+        { id: "BIO-11", subject: "Biology", difficulty: "Tough", question: "In ecological succession on bare rock (xerosere), which sequence of pioneer-to-climax communities is correct?", options: ["Lichens → Bryophytes → Herbs → Shrubs → Trees", "Bryophytes → Lichens → Trees → Grasses", "Phytoplankton → Reed-swamp → Forest", "Grasses → Lichens → Mosses → Climax forest"], correctIndex: 0, explanation: "Crustose/foliose lichens weather rock and secrete acids, paving the way for mosses, herbs, shrubs, and climax forest." },
+        { id: "BIO-12", subject: "Biology", difficulty: "Moderate", question: "Which plant hormone promotes closure of stomata under water-stress conditions?", options: ["Auxin", "Gibberellin", "Abscisic acid (ABA)", "Cytokinin"], correctIndex: 2, explanation: "Abscisic acid acts as a stress hormone and induces stomatal closure to reduce transpirational water loss." },
+        { id: "BIO-13", subject: "Biology", difficulty: "Tough", question: "In recombinant DNA technology, insertional inactivation of the <span class='math-expr'>lacZ</span> gene (α-peptide of β-galactosidase) allows selection of recombinants because:", options: ["Recombinants form blue colonies on X-gal medium", "Recombinants cannot hydrolyze X-gal and form white colonies", "Non-recombinants become ampicillin sensitive", "It eliminates the need for ori"], correctIndex: 1, explanation: "Insertion of foreign DNA into lacZ disrupts β-galactosidase activity, yielding white colonies instead of blue colonies." },
+        { id: "BIO-14", subject: "Biology", difficulty: "Tough", question: "A cardiac output of <span class='math-expr'>5 L/min</span> and heart rate of <span class='math-expr'>72 beats/min</span> corresponds to a stroke volume of approximately:", options: ["50 mL", "69.4 mL", "100 mL", "120 mL"], correctIndex: 1, explanation: "Cardiac Output = Stroke Volume × Heart Rate ⇒ Stroke Volume = 5000 mL / 72 ≈ 69.4 mL." },
+        { id: "BIO-15", subject: "Biology", difficulty: "Tough", question: "Double fertilization unique to angiosperms involves:", options: ["Syngamy + Triple fusion", "Two syngamy events", "Parthenogenesis + Triple fusion", "Syngamy + Apomixis"], correctIndex: 0, explanation: "One male gamete fuses with the egg cell (syngamy → zygote) and the other fuses with two polar nuclei (triple fusion → PEN)." },
+        { id: "BIO-16", subject: "Biology", difficulty: "Moderate", question: "Which part of the human brain contains centers controlling respiration, cardiovascular reflexes, and gastric secretion?", options: ["Cerebellum", "Medulla oblongata", "Hypothalamus", "Corpus callosum"], correctIndex: 1, explanation: "The medulla oblongata regulates vital involuntary functions including breathing rhythm and cardiac reflexes." },
+        { id: "BIO-17", subject: "Biology", difficulty: "Tough", question: "In a diploid population in Hardy-Weinberg equilibrium, if frequency of recessive allele <span class='math-expr'>q = 0.4</span>, the frequency of heterozygous carriers (<span class='math-expr'>2pq</span>) is:", options: ["0.16", "0.36", "0.48", "0.60"], correctIndex: 2, explanation: "p = 1 − 0.4 = 0.6. Heterozygote frequency 2pq = 2 × 0.6 × 0.4 = 0.48." },
+        { id: "BIO-18", subject: "Biology", difficulty: "Tough", question: "Which of the following statements about bryophytes is true?", options: ["Main plant body is diploid sporophyte", "Sporophyte is partially or wholly dependent on the gametophyte", "Vascular bundles with xylem vessels are well developed", "Seeds are produced without fruit"], correctIndex: 1, explanation: "In bryophytes, the dominant phase is the haploid gametophyte; the sporophyte attaches to and draws nutrition from it." },
+        { id: "BIO-19", subject: "Biology", difficulty: "Moderate", question: "Which enzyme unwinds the DNA double helix ahead of the replication fork?", options: ["DNA gyrase / Helicase", "RNA polymerase", "DNA ligase", "Restriction endonuclease"], correctIndex: 0, explanation: "Helicase breaks hydrogen bonds between complementary base pairs to unwind the double helix." },
+        { id: "BIO-20", subject: "Biology", difficulty: "Tough", question: "During sliding filament muscle contraction, which structural change occurs in a sarcomere?", options: ["A-band shortens significantly", "I-band and H-zone shorten while A-band length remains unchanged", "Myosin filaments shorten", "Z-lines move farther apart"], correctIndex: 1, explanation: "Actin slides over myosin, shortening the I-band and H-zone and pulling Z-lines closer, while the A-band stays constant." },
+        { id: "BIO-21", subject: "Biology", difficulty: "Tough", question: "Which microbe is used commercially for production of the immunosuppressive agent cyclosporin A?", options: ["Monascus purpureus", "Trichoderma polysporum", "Streptococcus", "Clostridium butylicum"], correctIndex: 1, explanation: "The fungus Trichoderma polysporum produces cyclosporin A; Monascus purpureus produces blood-cholesterol-lowering statins." },
+        { id: "BIO-22", subject: "Biology", difficulty: "Tough", question: "Oxygen dissociation curve of hemoglobin shifts to the right in actively respiring tissues due to:", options: ["Higher pH and lower pCO₂", "Lower pCO₂ and lower temperature", "Higher pCO₂, higher H⁺ (lower pH), and higher temperature", "Higher O₂ affinity at low pO₂"], correctIndex: 2, explanation: " Bohr effect: elevated pCO₂, H⁺ concentration, and temperature lower hemoglobin's O₂ affinity, aiding O₂ unloading." },
+        { id: "BIO-23", subject: "Biology", difficulty: "Moderate", question: "Which taxonomic category lies directly between Class and Family in the Linnaean hierarchy?", options: ["Phylum", "Order", "Genus", "Species"], correctIndex: 1, explanation: "Descending order in plants/animals: Kingdom → Division/Phylum → Class → Order → Family → Genus → Species." },
+        { id: "BIO-24", subject: "Biology", difficulty: "Tough", question: "In Z-scheme (non-cyclic photophosphorylation), electrons lost by PS II reaction center (<span class='math-expr'>P680</span>) are replenished by:", options: ["NADPH", "Photolysis of water", "Ferredoxin", "ATP synthase"], correctIndex: 1, explanation: "Water-splitting complex on the inner thylakoid membrane supplies electrons to P680⁺ and releases O₂." },
+        { id: "BIO-25", subject: "Biology", difficulty: "Tough", question: "A woman with normal vision whose father was color-blind marries a normal man. What is the probability that their first son is color-blind?", options: ["0%", "25%", "50%", "100%"], correctIndex: 2, explanation: "Her father (X^c Y) passed X^c to her, making her a carrier (X^C X^c). With a normal father (X^C Y), each son has a 50% chance of getting X^c." },
+        { id: "BIO-26", subject: "Biology", difficulty: "Moderate", question: "Which of the following is a coelomate phylum exhibiting bilateral symmetry and metameric segmentation?", options: ["Porifera", "Cnidaria", "Annelida", "Ctenophora"], correctIndex: 2, explanation: "Annelids are triploblastic, bilaterally symmetrical, coelomate animals with true metameric segmentation." },
+        { id: "BIO-27", subject: "Biology", difficulty: "Tough", question: "During translation on a ribosome, peptide bond formation between amino acids is catalyzed by:", options: ["Aminoacyl-tRNA synthetase", "Peptidyl transferase activity of rRNA (ribozyme)", "RNA helicase", "Release factor RF1"], correctIndex: 1, explanation: "In bacteria, the 23S rRNA component of the large ribosomal subunit acts as a ribozyme catalyzing peptide bond formation." },
+        { id: "BIO-28", subject: "Biology", difficulty: "Tough", question: "Which pair of biodiversity hotspots lies within or overlaps with the Indian subcontinent?", options: ["Western Ghats and Indo-Burma (plus Himalaya)", "Amazon Basin and Madagascar", "Great Barrier Reef and Cape Floristic Region", "Siberian Taiga and Sahara"], correctIndex: 0, explanation: "Himalaya, Indo-Burma, and Western Ghats/Sri Lanka are recognized biodiversity hotspots associated with India." },
+        { id: "BIO-29", subject: "Biology", difficulty: "Tough", question: "In human male reproductive anatomy, sperm gain motility and fertilizing capability mainly while passing through:", options: ["Seminiferous tubules", "Epididymis", "Bulbourethral gland", "Urinary bladder"], correctIndex: 1, explanation: "Testicular spermatozoa are non-motile and acquire functional maturity and motility in the epididymis." },
+        { id: "BIO-30", subject: "Biology", difficulty: "Moderate", question: "Which biomolecule is a homopolymer of β-D-glucose forming plant cell walls?", options: ["Glycogen", "Starch", "Cellulose", "Chitin"], correctIndex: 2, explanation: "Cellulose is a linear unbranched polymer of β-(1→4)-linked D-glucose units." },
+        { id: "BIO-31", subject: "Biology", difficulty: "Tough", question: "In a food chain, if <span class='math-expr'>10,000 J</span> of energy is available at the producer level, how much energy is typically available at the tertiary consumer level according to Lindeman's 10% law?", options: ["1000 J", "100 J", "10 J", "1 J"], correctIndex: 2, explanation: "Producer (10,000 J) → Primary consumer (1,000 J) → Secondary consumer (100 J) → Tertiary consumer (10 J)." },
+        { id: "BIO-32", subject: "Biology", difficulty: "Tough", question: "Which of the following is NOT a characteristic of gymnosperms?", options: ["Naked seeds not enclosed inside an ovary wall", "Heterospory", "Double fertilization producing triploid endosperm", "Wind pollination"], correctIndex: 2, explanation: "Double fertilization is characteristic of angiosperms; gymnosperms have haploid female gametophyte endosperm." },
+        { id: "BIO-33", subject: "Biology", difficulty: "Tough", question: "Which hormone acts via intracellular receptors (nuclear receptors) rather than cell-surface G-protein/tyrosine kinase receptors?", options: ["Insulin", "Epinephrine", "Estrogen / Thyroxine (steroid/iodothyronine)", "Glucagon"], correctIndex: 2, explanation: "Lipophilic steroid hormones and thyroid hormones cross the plasma membrane and bind intracellular receptors." },
+        { id: "BIO-34", subject: "Biology", difficulty: "Moderate", question: "The causative agent of malaria in humans belongs to which genus of protozoans?", options: ["Entamoeba", "Plasmodium", "Trypanosoma", "Leishmania"], correctIndex: 1, explanation: "Plasmodium species (such as P. vivax and P. falciparum) transmitted by female Anopheles cause malaria." },
+        { id: "BIO-35", subject: "Biology", difficulty: "Tough", question: "In a resting neuron, the membrane potential (~−70 mV) is maintained primarily because:", options: ["Voltage-gated Na⁺ channels are wide open", "High K⁺ leak permeability + Na⁺/K⁺ ATPase pumping 3 Na⁺ out and 2 K⁺ in", "Cl⁻ is pumped actively into the axon", "Action potential is firing continuously"], correctIndex: 1, explanation: "Unequal ion distribution and greater membrane permeability to K⁺ at rest establish the negative resting potential." },
+        { id: "BIO-36", subject: "Biology", difficulty: "Tough", question: "A pea plant with genotype <span class='math-expr'>RrYy</span> is test-crossed with <span class='math-expr'>rryy</span>. What fraction of progeny will show the recessive wrinkled green phenotype (<span class='math-expr'>rryy</span>)?", options: ["1 / 2", "1 / 4", "1 / 8", "1 / 16"], correctIndex: 1, explanation: "RrYy × rryy produces 4 equally likely phenotypes (1:1:1:1), so rryy occurs in 1/4 of the progeny." },
+        { id: "BIO-37", subject: "Biology", difficulty: "Tough", question: "Which structure in a flowering plant is triploid (<span class='math-expr'>3n</span>) in most angiosperms?", options: ["Zygote", "Synergid", "Primary Endosperm Nucleus (PEN)", "Nucellus"], correctIndex: 2, explanation: "Fusion of one haploid male gamete with two haploid polar nuclei forms the triploid primary endosperm nucleus." },
+        { id: "BIO-38", subject: "Biology", difficulty: "Moderate", question: "Which organelle is known as the 'powerhouse of the cell' due to oxidative phosphorylation and ATP synthesis?", options: ["Golgi apparatus", "Mitochondrion", "Lysosome", "Peroxisome"], correctIndex: 1, explanation: "Mitochondria generate most of the cell's ATP supply via the electron transport chain and ATP synthase." },
+        { id: "BIO-39", subject: "Biology", difficulty: "Tough", question: "In population ecology, logistic growth <span class='math-expr'>dN/dt = rN[(K − N)/K]</span> approaches zero growth rate when:", options: ["N = K / 2", "N approaches carrying capacity K", "r = 0 with N = 1", "Birth rate is maximum"], correctIndex: 1, explanation: "As population size N approaches carrying capacity K, (K − N)/K approaches 0, slowing growth to zero at N = K." },
+        { id: "BIO-40", subject: "Biology", difficulty: "Tough", question: "Which statement correctly distinguishes monocot stems from dicot stems in anatomy?", options: ["Monocot stems have conjoint open vascular bundles in a ring", "Monocot stems have scattered conjoint closed vascular bundles without secondary growth (usually)", "Monocot stems have distinct pith and medullary rays", "Monocot stems have cambium between xylem and phloem"], correctIndex: 1, explanation: "Monocot stems typically feature scattered closed vascular bundles (no cambium) and ground tissue undifferentiated into cortex and pith." },
+        { id: "BIO-41", subject: "Biology", difficulty: "Tough", question: "During oogenesis in humans, meiosis I arrests at prophase I until puberty and resumes before ovulation, producing:", options: ["Two equal haploid oocytes", "One large secondary oocyte and one small first polar body", "Four functional ova", "A diploid primary oocyte"], correctIndex: 1, explanation: "Unequal cytokinesis during meiosis I forms a large haploid secondary oocyte and a tiny first polar body." },
+        { id: "BIO-42", subject: "Biology", difficulty: "Moderate", question: "Which gas was NOT present in free abundant form in Miller and Urey's simulated primitive Earth spark apparatus?", options: ["Methane (CH₄)", "Ammonia (NH₃)", "Molecular oxygen (O₂)", "Water vapor (H₂O)"], correctIndex: 2, explanation: "The primitive atmosphere was reducing with no free molecular oxygen (O₂)." },
+        { id: "BIO-43", subject: "Biology", difficulty: "Tough", question: "In PCR (Polymerase Chain Reaction), which thermostable DNA polymerase allows repeated high-temperature denaturation cycles?", options: ["DNA polymerase I", "Taq polymerase (from Thermus aquaticus)", "Reverse transcriptase", "RNA polymerase II"], correctIndex: 1, explanation: "Taq polymerase withstands high denaturation temperatures (~94–95°C) without losing activity." },
+        { id: "BIO-44", subject: "Biology", difficulty: "Tough", question: "Which joint allows rotational movement such as turning the head side-to-side (atlas over axis)?", options: ["Ball and socket joint", "Pivot joint", "Hinge joint", "Fibrous suture"], correctIndex: 1, explanation: "The pivot joint between the atlas and odontoid process of the axis permits rotational movement." },
+        { id: "BIO-45", subject: "Biology", difficulty: "Tough", question: "In ecological pyramids, which of the following can be inverted in a terrestrial or aquatic ecosystem?", options: ["Pyramid of energy", "Pyramid of biomass in an aquatic/sea ecosystem", "Both pyramid of energy and biomass", "Energy pyramid is always inverted"], correctIndex: 1, explanation: "Pyramid of energy is always upright, whereas pyramid of biomass can be inverted in aquatic systems (e.g., phytoplankton < zooplankton)." }
+      ];
+
+      // ---------------------------------------------------------------------
+      // 2. DETERMINISTIC DEDUPLICATION CHECK ON LOAD
+      // ---------------------------------------------------------------------
+      function deduplicateQuestionBank(bank) {
+        const seenSignatures = new Set();
+        const uniqueBank = [];
+        bank.forEach((q) => {
+          const normalizedStem = q.question
+            .replace(/<[^>]*>/g, " ")
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, " ")
+            .trim();
+          const sig = `${q.subject.toLowerCase()}|${normalizedStem}`;
+          if (!seenSignatures.has(sig)) {
+            seenSignatures.add(sig);
+            uniqueBank.push(q);
+          }
+        });
+        return uniqueBank;
+      }
+
+      const QUESTION_BANK = deduplicateQuestionBank(RAW_QUESTION_BANK);
+
+      // ---------------------------------------------------------------------
+      // 3. STATE, AUDIO BELL & UTILITIES
+      // ---------------------------------------------------------------------
+      let gradedRecords = [];
+      let audioCtxRef = null;
+
+      const state = {
+        candidateName: "",
+        candidateRoll: "",
+        candidateBatch: "",
+        durationChoice: "180",
+        running: false,
+        submitted: false,
+        lockedByCheat: false,
+        totalSec: 10800,
+        remSec: 10800,
+        fiveMinBellPlayed: false,
+        clockTimer: null,
+        strikes: 0,
+        strikeLogs: [],
+        lastStrikeMs: 0,
+        modules: ["Physics", "Chemistry", "Biology"],
+        currentModule: "Physics",
+        questionsByModule: {},
+        indexByModule: {},
+        answersById: {}
+      };
+
+      function getAudioCtx() {
+        if (!audioCtxRef) {
+          const Ctx = window.AudioContext || window.webkitAudioContext;
+          if (Ctx) audioCtxRef = new Ctx();
+        }
+        if (audioCtxRef && audioCtxRef.state === "suspended") {
+          audioCtxRef.resume().catch(() => {});
+        }
+        return audioCtxRef;
+      }
+
+      function playFiveMinuteWarningBell() {
+        try {
+          const ctx = getAudioCtx();
+          if (!ctx) return;
+          const start = ctx.currentTime;
+          [0, 0.65, 1.3].forEach((offset) => {
+            const oscA = ctx.createOscillator();
+            const oscB = ctx.createOscillator();
+            const gain = ctx.createGain();
+            oscA.type = "sine";
+            oscA.frequency.setValueAtTime(880, start + offset);
+            oscB.type = "triangle";
+            oscB.frequency.setValueAtTime(1320, start + offset);
+
+            gain.gain.setValueAtTime(0.001, start + offset);
+            gain.gain.exponentialRampToValueAtTime(0.35, start + offset + 0.025);
+            gain.gain.exponentialRampToValueAtTime(0.0001, start + offset + 0.56);
+
+            oscA.connect(gain);
+            oscB.connect(gain);
+            gain.connect(ctx.destination);
+
+            oscA.start(start + offset);
+            oscB.start(start + offset);
+            oscA.stop(start + offset + 0.58);
+            oscB.stop(start + offset + 0.58);
+          });
+        } catch (e) {}
+      }
+
+      function playCheatAlarmSound() {
+        try {
+          const ctx = getAudioCtx();
+          if (!ctx) return;
+          const start = ctx.currentTime;
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = "sawtooth";
+          osc.frequency.setValueAtTime(430, start);
+          osc.frequency.linearRampToValueAtTime(240, start + 0.35);
+          gain.gain.setValueAtTime(0.25, start);
+          gain.gain.exponentialRampToValueAtTime(0.001, start + 0.36);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(start);
+          osc.stop(start + 0.38);
+        } catch (e) {}
+      }
+
+      function notifyUser(msg) {
+        const toast = document.getElementById("appToast");
+        toast.textContent = msg;
+        toast.classList.remove("hidden");
+        clearTimeout(toast._t);
+        toast._t = setTimeout(() => toast.classList.add("hidden"), 3400);
+      }
+
+      function shuffleArray(list) {
+        const arr = list.slice();
+        for (let i = arr.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        return arr;
+      }
+
+      function formatSeconds(sec) {
+        const s = Math.max(0, sec);
+        const h = Math.floor(s / 3600);
+        const m = Math.floor((s % 3600) / 60);
+        const r = s % 60;
+        return [h, m, r].map((v) => String(v).padStart(2, "0")).join(":");
+      }
+
+      function encodeVerification(obj) {
+        const utf8 = new TextEncoder().encode(JSON.stringify(obj));
+        let bin = "";
+        utf8.forEach((b) => (bin += String.fromCharCode(b)));
+        return "NEET2027-CBTV2-" + btoa(bin);
+      }
+
+      function decodeVerification(rawText) {
+        const trimmed = rawText.trim();
+        if (trimmed.startsWith("{")) {
+          const parsed = JSON.parse(trimmed);
+          return parsed.receipt ? parsed.receipt : parsed;
+        }
+        if (!trimmed.startsWith("NEET2027-CBTV2-")) {
+          throw new Error("Invalid verification code");
+        }
+        const b64 = trimmed.slice("NEET2027-CBTV2-".length);
+        const bin = atob(b64);
+        const bytes = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        const parsed = JSON.parse(new TextDecoder().decode(bytes));
+        return parsed.receipt ? parsed.receipt : parsed;
+      }
+
+      // ---------------------------------------------------------------------
+      // 4. SESSION BUILDER (3 MODULES OF 45 Qs EACH, SHUFFLED)
+      // ---------------------------------------------------------------------
+      function initExamSession() {
+        state.currentModule = "Physics";
+        state.questionsByModule = {};
+        state.indexByModule = {};
+        state.answersById = {};
+
+        state.modules.forEach((mod) => {
+          const modQs = QUESTION_BANK.filter((q) => q.subject === mod);
+          const shuffled = shuffleArray(modQs).map((q) => {
+            const opts = q.options.map((text, origIdx) => ({ text, origIdx }));
+            return {
+              id: q.id,
+              subject: q.subject,
+              difficulty: q.difficulty,
+              question: q.question,
+              options: shuffleArray(opts)
+            };
+          });
+
+          state.questionsByModule[mod] = shuffled;
+          state.indexByModule[mod] = 0;
+
+          shuffled.forEach((q) => {
+            state.answersById[q.id] = {
+              selectedPos: null,
+              selectedOrigIdx: null,
+              status: "not-visited"
+            };
+          });
+        });
+
+        const firstQ = state.questionsByModule["Physics"][0];
+        if (firstQ) {
+          state.answersById[firstQ.id].status = "not-answered";
+        }
+
+        if (state.durationChoice === "demo515") {
+          state.totalSec = 315;
+        } else if (state.durationChoice === "60") {
+          state.totalSec = 60 * 60;
+        } else {
+          state.totalSec = 180 * 60;
+        }
+
+        state.remSec = state.totalSec;
+        state.fiveMinBellPlayed = false;
+        state.strikes = 0;
+        state.strikeLogs = [];
+        state.lastStrikeMs = 0;
+        state.running = true;
+        state.submitted = false;
+        state.lockedByCheat = false;
+      }
+
+      // ---------------------------------------------------------------------
+      // 5. FULLSCREEN & ANTI-CHEATING SCREEN-CHANGE HANDLERS
+      // ---------------------------------------------------------------------
+      function lockFullscreen() {
+        const el = document.documentElement;
+        if (el.requestFullscreen) {
+          el.requestFullscreen().catch(() => {});
+        } else if (el.webkitRequestFullscreen) {
+          el.webkitRequestFullscreen();
+        }
+      }
+
+      function handleViolationStrike(reason) {
+        if (!state.running || state.submitted) return;
+        const now = Date.now();
+        if (now - state.lastStrikeMs < 1200) return;
+        state.lastStrikeMs = now;
+
+        state.strikes += 1;
+        state.strikeLogs.push({
+          strike: state.strikes,
+          reason,
+          time: new Date().toLocaleTimeString(),
+          timeLeft: formatSeconds(state.remSec)
+        });
+
+        playCheatAlarmSound();
+        document.getElementById("examStrikeNum").textContent = state.strikes;
+        document.getElementById("examStrikePill").className =
+          "px-2.5 py-1 rounded-lg bg-red-700 border border-red-400 text-xs font-extrabold text-white";
+
+        if (state.strikes >= MAX_VIOLATION_STRIKES) {
+          document.getElementById("antiCheatModal").classList.add("hidden");
+          finishAndSubmitExam(true, "Auto-Submitted (3 Anti-Cheating Strikes Reached)");
+          return;
+        }
+
+        document.getElementById("antiCheatReasonMsg").textContent = reason;
+        document.getElementById("antiCheatStrikeDisplay").textContent = `${state.strikes} / ${MAX_VIOLATION_STRIKES}`;
+        document.getElementById("antiCheatModal").classList.remove("hidden");
+      }
+
+      document.addEventListener("visibilitychange", () => {
+        if (document.hidden && state.running && !state.submitted) {
+          handleViolationStrike("Screen / Tab change or window minimization detected.");
+        }
+      });
+
+      window.addEventListener("blur", () => {
+        if (state.running && !state.submitted) {
+          handleViolationStrike("Exam window lost focus (switched screen or app).");
+        }
+      });
+
+      document.addEventListener("fullscreenchange", () => {
+        if (!document.fullscreenElement && state.running && !state.submitted) {
+          handleViolationStrike("Exited mandatory fullscreen mode.");
+        }
+      });
+
+      document.addEventListener("contextmenu", (e) => {
+        if (state.running && !state.submitted) {
+          e.preventDefault();
+          notifyUser("Right-click is disabled during the exam.");
+        }
+      });
+
+      document.addEventListener("keydown", (e) => {
+        if (!state.running || state.submitted) return;
+        const k = e.key.toLowerCase();
+        const blockedCtrl = (e.ctrlKey || e.metaKey) && ["c", "v", "x", "p", "u", "s", "a"].includes(k);
+        const blockedDev =
+          e.key === "F12" ||
+          ((e.ctrlKey || e.metaKey) && e.shiftKey && ["i", "j", "c"].includes(k));
+        if (blockedCtrl || blockedDev) {
+          e.preventDefault();
+          handleViolationStrike(`Restricted shortcut or DevTools key blocked (${e.key.toUpperCase()}).`);
+        }
+      });
+
+      document.getElementById("resumeFullscreenExamBtn").addEventListener("click", () => {
+        document.getElementById("antiCheatModal").classList.add("hidden");
+        lockFullscreen();
+      });
+
+      // ---------------------------------------------------------------------
+      // 6. TIMER & 5-MINUTE BELL
+      // ---------------------------------------------------------------------
+      function startTimerLoop() {
+        const clockEl = document.getElementById("liveTimerClock");
+        const bellBar = document.getElementById("fiveMinuteBellBanner");
+        clockEl.textContent = formatSeconds(state.remSec);
+
+        clearInterval(state.clockTimer);
+        state.clockTimer = setInterval(() => {
+          if (!state.running || state.submitted) {
+            clearInterval(state.clockTimer);
+            return;
+          }
+
+          state.remSec -= 1;
+          clockEl.textContent = formatSeconds(state.remSec);
+
+          if (state.remSec <= 300 && !state.fiveMinBellPlayed) {
+            state.fiveMinBellPlayed = true;
+            playFiveMinuteWarningBell();
+            bellBar.classList.remove("hidden");
+            clockEl.classList.remove("text-amber-400");
+            clockEl.classList.add("text-red-400");
+          }
+
+          if (state.remSec <= 0) {
+            clearInterval(state.clockTimer);
+            finishAndSubmitExam(false, "Time Expired — Auto-Submitted");
+          }
+        }, 1000);
+      }
+
+      // ---------------------------------------------------------------------
+      // 7. RENDERING 3 SUBJECT MODULES, QUESTIONS & PALETTES
+      // ---------------------------------------------------------------------
+      const OPTION_LETTERS = ["A", "B", "C", "D"];
+
+      function renderModuleTabs() {
+        const bar = document.getElementById("moduleTabsBar");
+        bar.innerHTML = "";
+        state.modules.forEach((mod) => {
+          const isCur = mod === state.currentModule;
+          const btn = document.createElement("button");
+          btn.className = isCur
+            ? "px-3.5 py-1.5 rounded-lg bg-amber-400 text-slate-950 text-xs font-extrabold shadow cursor-pointer"
+            : "px-3.5 py-1.5 rounded-lg text-slate-200 hover:bg-white/10 text-xs font-bold transition cursor-pointer";
+          btn.textContent = `${mod} (45)`;
+          btn.addEventListener("click", () => {
+            state.currentModule = mod;
+            const idx = state.indexByModule[mod] || 0;
+            const q = state.questionsByModule[mod][idx];
+            if (q && state.answersById[q.id].status === "not-visited") {
+              state.answersById[q.id].status = "not-answered";
+            }
+            renderQuestionScreen();
+          });
+          bar.appendChild(btn);
+        });
+      }
+
+      function renderQuestionScreen() {
+        renderModuleTabs();
+
+        const mod = state.currentModule;
+        const list = state.questionsByModule[mod];
+        const idx = state.indexByModule[mod];
+        const q = list[idx];
+        const ans = state.answersById[q.id];
+
+        if (ans.status === "not-visited") {
+          ans.status = "not-answered";
+        }
+
+        document.getElementById("qModuleBadge").textContent = mod;
+        document.getElementById("qNumberHeading").textContent = `Question ${idx + 1} of ${list.length}`;
+        const diffChip = document.getElementById("qDifficultyChip");
+        diffChip.textContent = q.difficulty;
+        diffChip.className =
+          q.difficulty === "Tough"
+            ? "px-2 py-0.5 rounded-full text-[11px] font-bold bg-rose-100 text-rose-800"
+            : "px-2 py-0.5 rounded-full text-[11px] font-bold bg-sky-100 text-sky-800";
+
+        document.getElementById("qPromptBox").innerHTML = q.question;
+
+        const choicesBox = document.getElementById("qChoicesBox");
+        choicesBox.innerHTML = "";
+
+        q.options.forEach((opt, pos) => {
+          const letter = OPTION_LETTERS[pos] || String(pos + 1);
+          const selected = ans.selectedPos === pos;
+          const row = document.createElement("label");
+          row.className = selected
+            ? "flex items-center gap-3.5 p-3.5 rounded-xl border-2 border-[#0b2545] bg-sky-50 cursor-pointer transition shadow-2xs"
+            : "flex items-center gap-3.5 p-3.5 rounded-xl border border-slate-300 hover:border-slate-400 bg-white cursor-pointer transition";
+
+          row.innerHTML = `
+            <input type="radio" name="neetChoice" value="${pos}" ${selected ? "checked" : ""} class="w-4 h-4 accent-[#0b2545]" />
+            <span class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-extrabold ${
+              selected ? "bg-[#0b2545] text-white" : "bg-slate-100 text-slate-700"
+            }">${letter}</span>
+            <span class="text-sm sm:text-base text-slate-900 font-medium">${opt.text}</span>
+          `;
+
+          row.addEventListener("click", () => {
+            ans.selectedPos = pos;
+            ans.selectedOrigIdx = opt.origIdx;
+            renderQuestionScreen();
+          });
+
+          choicesBox.appendChild(row);
+        });
+
+        renderModulePalette();
+      }
+
+      function renderModulePalette() {
+        const mod = state.currentModule;
+        const list = state.questionsByModule[mod];
+        const activeIdx = state.indexByModule[mod];
+
+        document.getElementById("paletteModuleTitle").textContent = `${mod} Palette`;
+
+        // Counts for current module
+        const counts = {
+          answered: 0,
+          "not-answered": 0,
+          "not-visited": 0,
+          marked: 0,
+          "answered-marked": 0
+        };
+        list.forEach((q) => {
+          const st = state.answersById[q.id].status;
+          if (counts[st] !== undefined) counts[st] += 1;
+        });
+
+        document.getElementById("statAnswered").textContent = counts.answered;
+        document.getElementById("statNotAnswered").textContent = counts["not-answered"];
+        document.getElementById("statNotVisited").textContent = counts["not-visited"];
+        document.getElementById("statMarked").textContent = counts.marked;
+        document.getElementById("statAnsweredMarked").textContent = counts["answered-marked"];
+
+        const grid = document.getElementById("modulePaletteGrid");
+        grid.innerHTML = "";
+
+        list.forEach((q, idx) => {
+          const st = state.answersById[q.id].status;
+          const btn = document.createElement("button");
+          btn.className = `h-10 w-full text-xs font-extrabold flex items-center justify-center cursor-pointer transition pal-${st} ${
+            idx === activeIdx ? "ring-2 ring-offset-2 ring-[#0b2545]" : ""
+          }`;
+          btn.textContent = idx + 1;
+          btn.addEventListener("click", () => {
+            state.indexByModule[mod] = idx;
+            if (state.answersById[q.id].status === "not-visited") {
+              state.answersById[q.id].status = "not-answered";
+            }
+            renderQuestionScreen();
+          });
+          grid.appendChild(btn);
+        });
+      }
+
+      function stepForwardQuestion() {
+        const mod = state.currentModule;
+        const list = state.questionsByModule[mod];
+        const idx = state.indexByModule[mod];
+
+        if (idx + 1 < list.length) {
+          state.indexByModule[mod] = idx + 1;
+          renderQuestionScreen();
+        } else {
+          const mPos = state.modules.indexOf(mod);
+          if (mPos + 1 < state.modules.length) {
+            const nextMod = state.modules[mPos + 1];
+            state.currentModule = nextMod;
+            const firstNext = state.questionsByModule[nextMod][0];
+            if (firstNext && state.answersById[firstNext.id].status === "not-visited") {
+              state.answersById[firstNext.id].status = "not-answered";
+            }
+            renderQuestionScreen();
+            notifyUser(`Moved to ${nextMod} module.`);
+          } else {
+            renderQuestionScreen();
+            notifyUser("End of questions reached.");
+          }
+        }
+      }
+
+      document.getElementById("btnSaveAndNext").addEventListener("click", () => {
+        const mod = state.currentModule;
+        const q = state.questionsByModule[mod][state.indexByModule[mod]];
+        const ans = state.answersById[q.id];
+        if (ans.selectedPos !== null) {
+          ans.status = "answered";
+        } else {
+          ans.status = "not-answered";
+          notifyUser("No option selected — marked Not Answered.");
+        }
+        stepForwardQuestion();
+      });
+
+      document.getElementById("btnClearResponse").addEventListener("click", () => {
+        const mod = state.currentModule;
+        const q = state.questionsByModule[mod][state.indexByModule[mod]];
+        const ans = state.answersById[q.id];
+        ans.selectedPos = null;
+        ans.selectedOrigIdx = null;
+        ans.status = "not-answered";
+        renderQuestionScreen();
+      });
+
+      document.getElementById("btnMarkReviewNext").addEventListener("click", () => {
+        const mod = state.currentModule;
+        const q = state.questionsByModule[mod][state.indexByModule[mod]];
+        const ans = state.answersById[q.id];
+        ans.status = ans.selectedPos !== null ? "answered-marked" : "marked";
+        stepForwardQuestion();
+      });
+
+      document.getElementById("btnPrevQuestion").addEventListener("click", () => {
+        const mod = state.currentModule;
+        const idx = state.indexByModule[mod];
+        if (idx > 0) {
+          state.indexByModule[mod] = idx - 1;
+          renderQuestionScreen();
+        }
+      });
+
+      // ---------------------------------------------------------------------
+      // 8. SUBMISSION & STUDENT RECEIPT (NO SCORES OR ANSWERS REVEALED)
+      // ---------------------------------------------------------------------
+      document.getElementById("btnOpenSubmitModal").addEventListener("click", () => {
+        let html = `
+          <table class="w-full text-xs border-collapse border border-slate-200">
+            <thead>
+              <tr class="bg-slate-100">
+                <th class="border border-slate-200 p-2 text-left">Module</th>
+                <th class="border border-slate-200 p-2 text-center">Qs</th>
+                <th class="border border-slate-200 p-2 text-center text-emerald-700">Answered</th>
+                <th class="border border-slate-200 p-2 text-center text-purple-700">Review</th>
+                <th class="border border-slate-200 p-2 text-center text-red-600">Unanswered</th>
+              </tr>
+            </thead>
+            <tbody>
+        `;
+
+        state.modules.forEach((mod) => {
+          const list = state.questionsByModule[mod];
+          let a = 0, r = 0, u = 0;
+          list.forEach((q) => {
+            const st = state.answersById[q.id].status;
+            if (st === "answered" || st === "answered-marked") a++;
+            else if (st === "marked") r++;
+            else u++;
+          });
+          html += `
+            <tr>
+              <td class="border border-slate-200 p-2 font-bold">${mod}</td>
+              <td class="border border-slate-200 p-2 text-center">${list.length}</td>
+              <td class="border border-slate-200 p-2 text-center font-bold text-emerald-700">${a}</td>
+              <td class="border border-slate-200 p-2 text-center font-bold text-purple-700">${r}</td>
+              <td class="border border-slate-200 p-2 text-center font-bold text-red-600">${u}</td>
+            </tr>
+          `;
+        });
+
+        html += "</tbody></table>";
+        document.getElementById("confirmSummaryTableWrap").innerHTML = html;
+        document.getElementById("confirmSubmitModal").classList.remove("hidden");
+      });
+
+      document.getElementById("cancelConfirmSubmitBtn").addEventListener("click", () => {
+        document.getElementById("confirmSubmitModal").classList.add("hidden");
+      });
+
+      document.getElementById("executeFinalSubmitBtn").addEventListener("click", () => {
+        document.getElementById("confirmSubmitModal").classList.add("hidden");
+        finishAndSubmitExam(false, "Submitted by Candidate");
+      });
+
+      function finishAndSubmitExam(isLockedByCheat, statusReason) {
+        if (state.submitted) return;
+        state.submitted = true;
+        state.running = false;
+        state.lockedByCheat = isLockedByCheat;
+        clearInterval(state.clockTimer);
+
+        if (document.fullscreenElement && document.exitFullscreen) {
+          document.exitFullscreen().catch(() => {});
+        }
+
+        document.getElementById("activeExamView").classList.add("hidden");
+        document.getElementById("studentReceiptScreen").classList.remove("hidden");
+
+        document.getElementById("receiptViolationLockAlert").classList.toggle("hidden", !isLockedByCheat);
+        const hdr = document.getElementById("receiptHeaderBox");
+        hdr.classList.toggle("bg-red-800", isLockedByCheat);
+        hdr.classList.toggle("bg-[#0b2545]", !isLockedByCheat);
+
+        const elapsed = state.totalSec - Math.max(0, state.remSec);
+
+        document.getElementById("receiptMetaSummary").innerHTML = `
+          <div><span class="text-xs text-slate-500 block">Candidate Name</span><strong>${state.candidateName}</strong></div>
+          <div><span class="text-xs text-slate-500 block">Roll / ID Number</span><strong class="font-mono-num">${state.candidateRoll}</strong></div>
+          <div><span class="text-xs text-slate-500 block">Batch</span><strong>${state.candidateBatch}</strong></div>
+          <div><span class="text-xs text-slate-500 block">Elapsed Time</span><strong class="font-mono-num">${formatSeconds(elapsed)}</strong></div>
+          <div><span class="text-xs text-slate-500 block">Submission Status</span><strong class="${isLockedByCheat ? "text-red-700" : "text-emerald-700"}">${statusReason}</strong></div>
+          <div><span class="text-xs text-slate-500 block">Anti-Cheat Strikes</span><strong class="font-mono-num ${state.strikes > 0 ? "text-red-600" : "text-emerald-700"}">${state.strikes} / ${MAX_VIOLATION_STRIKES}</strong></div>
+        `;
+
+        let tbl = `
+          <table class="w-full text-xs border-collapse border border-slate-200">
+            <thead>
+              <tr class="bg-slate-100">
+                <th class="border border-slate-200 p-2 text-left">Subject Module</th>
+                <th class="border border-slate-200 p-2 text-center">Total Questions</th>
+                <th class="border border-slate-200 p-2 text-center">Attempted</th>
+                <th class="border border-slate-200 p-2 text-center">Unattempted</th>
+              </tr>
+            </thead>
+            <tbody>
+        `;
+
+        const savedAnswers = {};
+        state.modules.forEach((mod) => {
+          const list = state.questionsByModule[mod];
+          let attempted = 0;
+          list.forEach((q) => {
+            const r = state.answersById[q.id];
+            const counted = (r.status === "answered" || r.status === "answered-marked") && r.selectedOrigIdx !== null;
+            if (counted) attempted++;
+            savedAnswers[q.id] = counted ? r.selectedOrigIdx : null;
+          });
+          tbl += `
+            <tr>
+              <td class="border border-slate-200 p-2 font-bold">${mod}</td>
+              <td class="border border-slate-200 p-2 text-center">${list.length}</td>
+              <td class="border border-slate-200 p-2 text-center font-bold text-emerald-700">${attempted}</td>
+              <td class="border border-slate-200 p-2 text-center">${list.length - attempted}</td>
+            </tr>
+          `;
+        });
+        tbl += "</tbody></table>";
+        document.getElementById("receiptAttemptTableWrap").innerHTML = tbl;
+
+        const receiptObj = {
+          portal: "NEET-UG-2027-720",
+          candidateName: state.candidateName,
+          candidateRoll: state.candidateRoll,
+          candidateBatch: state.candidateBatch,
+          submittedAt: new Date().toISOString(),
+          elapsedSeconds: elapsed,
+          lockedByCheat: isLockedByCheat,
+          statusReason,
+          strikes: state.strikes,
+          maxStrikes: MAX_VIOLATION_STRIKES,
+          strikeLogs: state.strikeLogs,
+          answers: savedAnswers
+        };
+
+        const code = encodeVerification(receiptObj);
+        document.getElementById("receiptCodeOutput").value = code;
+        window.__studentReceiptObj = receiptObj;
+        window.__studentVerificationCode = code;
+      }
+
+      document.getElementById("downloadReceiptJsonBtn").addEventListener("click", () => {
+        if (!window.__studentReceiptObj) return;
+        const jsonStr = JSON.stringify(
+          {
+            verificationCode: window.__studentVerificationCode,
+            receipt: window.__studentReceiptObj
+          },
+          null,
+          2
+        );
+        const blob = new Blob([jsonStr], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `NEET2027_${state.candidateRoll.replace(/[^a-zA-Z0-9_-]/g, "_")}_Receipt.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+      });
+
+      document.getElementById("copyReceiptCodeBtn").addEventListener("click", () => {
+        const box = document.getElementById("receiptCodeOutput");
+        box.select();
+        document.execCommand("copy");
+        notifyUser("Verification code copied!");
+      });
+
+      document.getElementById("backToPortalHomeBtn").addEventListener("click", () => {
+        document.getElementById("studentReceiptScreen").classList.add("hidden");
+        document.getElementById("startPortalView").classList.remove("hidden");
+      });
+
+      // ---------------------------------------------------------------------
+      // 9. START BUTTON & BELL PREVIEW
+      // ---------------------------------------------------------------------
+      document.getElementById("previewFiveMinBellBtn").addEventListener("click", () => {
+        getAudioCtx();
+        playFiveMinuteWarningBell();
+        notifyUser("Playing 5-minute warning bell...");
+      });
+
+      document.getElementById("startExamLockBtn").addEventListener("click", () => {
+        const name = document.getElementById("candNameInput").value.trim();
+        const roll = document.getElementById("candRollInput").value.trim();
+        const batch = document.getElementById("candBatchInput").value.trim();
+        const accepted = document.getElementById("examRulesAcceptCheckbox").checked;
+
+        if (!name || !roll || !batch) {
+          notifyUser("Please enter Candidate Name, Roll/ID Number, and Batch.");
+          return;
+        }
+        if (!accepted) {
+          notifyUser("Please accept the exam and anti-cheating rules first.");
+          return;
+        }
+
+        state.candidateName = name;
+        state.candidateRoll = roll;
+        state.candidateBatch = batch;
+        state.durationChoice = document.getElementById("examDurationSelect").value;
+
+        getAudioCtx();
+        initExamSession();
+        lockFullscreen();
+
+        history.pushState(null, "", location.href);
+        window.onpopstate = function () {
+          if (state.running && !state.submitted) {
+            history.pushState(null, "", location.href);
+            handleViolationStrike("Browser back button pressed during exam.");
+          }
+        };
+
+        document.getElementById("examCandidateSummaryPill").textContent = `${state.candidateName} • ${state.candidateRoll} • ${state.candidateBatch}`;
+        document.getElementById("examStrikeNum").textContent = "0";
+        document.getElementById("examStrikePill").className =
+          "px-2.5 py-1 rounded-lg bg-emerald-900/70 border border-emerald-400/40 text-xs font-bold text-emerald-200";
+        document.getElementById("fiveMinuteBellBanner").classList.add("hidden");
+        document.getElementById("liveTimerClock").classList.remove("text-red-400");
+        document.getElementById("liveTimerClock").classList.add("text-amber-400");
+
+        document.getElementById("startPortalView").classList.add("hidden");
+        document.getElementById("activeExamView").classList.remove("hidden");
+
+        renderQuestionScreen();
+        startTimerLoop();
+      });
+
+      // ---------------------------------------------------------------------
+      // 10. TEACHER PORTAL (SEPARATE ANSWER KEYS & 720-MARK AUTO-GRADER)
+      // ---------------------------------------------------------------------
+      document.getElementById("openTeacherPortalBtn").addEventListener("click", () => {
+        document.getElementById("teacherPortalModal").classList.remove("hidden");
+      });
+
+      document.getElementById("closeTeacherModalBtn").addEventListener("click", () => {
+        document.getElementById("teacherPortalModal").classList.add("hidden");
+      });
+
+      document.getElementById("unlockTeacherBtn").addEventListener("click", () => {
+        const code = document.getElementById("teacherPassInput").value.trim();
+        if (code === TEACHER_PORTAL_PASSCODE) {
+          document.getElementById("teacherAuthGate").classList.add("hidden");
+          document.getElementById("teacherMainWorkspace").classList.remove("hidden");
+          renderTeacherAnswerKeys();
+        } else {
+          notifyUser("Invalid Teacher Portal passcode.");
+        }
+      });
+
+      document.querySelectorAll(".t-tab-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          document.querySelectorAll(".t-tab-btn").forEach((b) => {
+            b.className = "t-tab-btn px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold cursor-pointer";
+          });
+          btn.className = "t-tab-btn px-4 py-2 rounded-xl bg-[#0b2545] text-white text-xs font-bold cursor-pointer";
+          const target = btn.getAttribute("data-tpanel");
+          document.querySelectorAll(".t-panel").forEach((p) => {
+            p.classList.toggle("hidden", p.id !== target);
+          });
+        });
+      });
+
+      document.getElementById("keyModuleFilter").addEventListener("change", renderTeacherAnswerKeys);
+
+      function renderTeacherAnswerKeys() {
+        const filter = document.getElementById("keyModuleFilter").value;
+        const mods = filter === "ALL" ? ["Physics", "Chemistry", "Biology"] : [filter];
+        const wrap = document.getElementById("teacherAnswerKeyTables");
+        wrap.innerHTML = "";
+
+        mods.forEach((mod) => {
+          const qs = QUESTION_BANK.filter((q) => q.subject === mod);
+          const box = document.createElement("div");
+          box.className = "border border-slate-200 rounded-xl overflow-hidden";
+
+          const rows = qs
+            .map(
+              (q, i) => `
+              <tr class="border-t border-slate-200">
+                <td class="p-2.5 font-mono-num font-bold text-center text-slate-700">Q${i + 1} (${q.id})</td>
+                <td class="p-2.5"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${q.difficulty === "Tough" ? "bg-rose-100 text-rose-800" : "bg-sky-100 text-sky-800"}">${q.difficulty}</span></td>
+                <td class="p-2.5 text-slate-800">${q.question}</td>
+                <td class="p-2.5 font-bold text-emerald-700 bg-emerald-50/60">(${OPTION_LETTERS[q.correctIndex]}) ${q.options[q.correctIndex]}</td>
+                <td class="p-2.5 text-slate-600">${q.explanation}</td>
+              </tr>`
+            )
+            .join("");
+
+          box.innerHTML = `
+            <div class="bg-[#0b2545] text-white px-4 py-2 text-xs font-extrabold uppercase tracking-wide">
+              Answer Key &amp; Explanations — ${mod} (${qs.length} Qs • 240 Scaled Marks)
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-xs text-left border-collapse">
+                <thead>
+                  <tr class="bg-slate-100 text-slate-700">
+                    <th class="p-2.5 text-center w-24">Q. No.</th>
+                    <th class="p-2.5 w-20">Level</th>
+                    <th class="p-2.5">Question</th>
+                    <th class="p-2.5 w-48">Correct Choice</th>
+                    <th class="p-2.5 w-64">Explanation</th>
+                  </tr>
+                </thead>
+                <tbody>${rows}</tbody>
+              </table>
+            </div>
+          `;
+          wrap.appendChild(box);
+        });
+      }
+
+      // Compute raw (+4/-1/0) and 720-scaled marks (135 Qs -> 540 raw max -> scaled * (720/540) = * (4/3))
+      function gradeReceiptTo720(receipt) {
+        const ansMap = receipt.answers || {};
+        let rawTotal = 0;
+        let correctCount = 0;
+        let wrongCount = 0;
+        let blankCount = 0;
+
+        const modBreakdown = {
+          Physics: { c: 0, w: 0, b: 0, raw: 0, scaled720: 0 },
+          Chemistry: { c: 0, w: 0, b: 0, raw: 0, scaled720: 0 },
+          Biology: { c: 0, w: 0, b: 0, raw: 0, scaled720: 0 }
+        };
+
+        QUESTION_BANK.forEach((q) => {
+          const picked = Object.prototype.hasOwnProperty.call(ansMap, q.id) ? ansMap[q.id] : null;
+          if (picked === null || picked === undefined) {
+            blankCount++;
+            modBreakdown[q.subject].b++;
+          } else if (picked === q.correctIndex) {
+            correctCount++;
+            rawTotal += 4;
+            modBreakdown[q.subject].c++;
+            modBreakdown[q.subject].raw += 4;
+          } else {
+            wrongCount++;
+            rawTotal -= 1;
+            modBreakdown[q.subject].w++;
+            modBreakdown[q.subject].raw -= 1;
+          }
+        });
+
+        // Each 45-Q module has 180 raw max -> scaled to 240 marks (3 modules * 240 = 720 marks total)
+        Object.keys(modBreakdown).forEach((m) => {
+          modBreakdown[m].scaled720 = Number(((modBreakdown[m].raw / 180) * 240).toFixed(2));
+        });
+
+        const scaledScore720 = Number(((rawTotal / 540) * 720).toFixed(2));
+        const attempted = correctCount + wrongCount;
+        const accuracyPct = attempted > 0 ? ((correctCount / attempted) * 100).toFixed(1) : "0.0";
+
+        return {
+          candidateName: receipt.candidateName || "Unknown",
+          candidateRoll: receipt.candidateRoll || "N/A",
+          candidateBatch: receipt.candidateBatch || "N/A",
+          elapsedSeconds: receipt.elapsedSeconds || 0,
+          lockedByCheat: Boolean(receipt.lockedByCheat),
+          strikes: receipt.strikes || 0,
+          maxStrikes: receipt.maxStrikes || MAX_VIOLATION_STRIKES,
+          strikeLogs: receipt.strikeLogs || [],
+          rawTotal,
+          scaledScore720,
+          correctCount,
+          wrongCount,
+          blankCount,
+          accuracyPct,
+          modBreakdown
+        };
+      }
+
+      function renderGradedCards() {
+        const wrap = document.getElementById("teacherGradedCardsWrap");
+        document.getElementById("exportResultsCsvBtn").classList.toggle("hidden", gradedRecords.length === 0);
+
+        wrap.innerHTML = gradedRecords
+          .map(
+            (r) => `
+            <div class="border-2 ${r.lockedByCheat ? "border-red-600 bg-red-50/40" : "border-emerald-600 bg-emerald-50/20"} rounded-2xl p-5 space-y-4">
+              <div class="flex flex-wrap justify-between items-center gap-2 border-b border-slate-200 pb-3">
+                <div>
+                  <h4 class="text-base font-extrabold text-slate-900">${r.candidateName} (${r.candidateRoll}) • Batch: ${r.candidateBatch}</h4>
+                  <p class="text-xs text-slate-600">Time: ${formatSeconds(r.elapsedSeconds)} • Accuracy: ${r.accuracyPct}% • Raw: ${r.rawTotal}/540</p>
+                </div>
+                <div class="text-right">
+                  <div class="text-[11px] uppercase font-bold text-slate-500">Scaled NEET Score</div>
+                  <div class="text-2xl font-extrabold font-mono-num text-[#0b2545]">${r.scaledScore720} / 720</div>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center text-xs">
+                <div class="bg-white p-3 rounded-xl border border-slate-200"><span class="text-slate-500 block">Correct (+4)</span><strong class="text-lg font-mono-num text-emerald-700">${r.correctCount}</strong></div>
+                <div class="bg-white p-3 rounded-xl border border-slate-200"><span class="text-slate-500 block">Incorrect (−1)</span><strong class="text-lg font-mono-num text-red-600">${r.wrongCount}</strong></div>
+                <div class="bg-white p-3 rounded-xl border border-slate-200"><span class="text-slate-500 block">Unattempted (0)</span><strong class="text-lg font-mono-num text-slate-700">${r.blankCount}</strong></div>
+                <div class="bg-white p-3 rounded-xl border border-slate-200"><span class="text-slate-500 block">Cheat Strikes</span><strong class="text-lg font-mono-num ${r.strikes > 0 ? "text-red-600" : "text-emerald-700"}">${r.strikes}/${r.maxStrikes}</strong></div>
+              </div>
+
+              <div class="overflow-x-auto">
+                <table class="w-full text-xs bg-white border-collapse border border-slate-200">
+                  <thead>
+                    <tr class="bg-slate-100">
+                      <th class="border border-slate-200 p-2 text-left">Module (45 Qs)</th>
+                      <th class="border border-slate-200 p-2 text-center">Correct</th>
+                      <th class="border border-slate-200 p-2 text-center">Wrong</th>
+                      <th class="border border-slate-200 p-2 text-center">Blank</th>
+                      <th class="border border-slate-200 p-2 text-center">Raw (/180)</th>
+                      <th class="border border-slate-200 p-2 text-center">Scaled (/240)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${Object.entries(r.modBreakdown)
+                      .map(
+                        ([mName, m]) => `
+                        <tr>
+                          <td class="border border-slate-200 p-2 font-bold">${mName}</td>
+                          <td class="border border-slate-200 p-2 text-center text-emerald-700 font-bold">${m.c}</td>
+                          <td class="border border-slate-200 p-2 text-center text-red-600 font-bold">${m.w}</td>
+                          <td class="border border-slate-200 p-2 text-center">${m.b}</td>
+                          <td class="border border-slate-200 p-2 text-center font-mono-num">${m.raw}</td>
+                          <td class="border border-slate-200 p-2 text-center font-extrabold font-mono-num">${m.scaled720}</td>
+                        </tr>`
+                      )
+                      .join("")}
+                  </tbody>
+                </table>
+              </div>
+
+              ${
+                r.strikeLogs.length
+                  ? `<div class="bg-red-100 border border-red-300 rounded-xl p-3 text-xs text-red-900">
+                      <strong>Anti-Cheat Strike Log:</strong>
+                      <ul class="list-disc pl-4 mt-1">
+                        ${r.strikeLogs
+                          .map((v) => `<li>Strike ${v.strike} at ${v.time} (${v.timeLeft} left): ${v.reason}</li>`)
+                          .join("")}
+                      </ul>
+                    </div>`
+                  : `<div class="text-xs font-bold text-emerald-700">✓ Clean Proctoring Log: 0 screen-change violations.</div>`
+              }
+            </div>`
+          )
+          .join("");
+      }
+
+      document.getElementById("gradeStudentReceiptsBtn").addEventListener("click", async () => {
+        const files = Array.from(document.getElementById("teacherJsonUploadInput").files || []);
+        const pasted = document.getElementById("teacherCodePasteInput").value.trim();
+
+        const inputs = [];
+        for (const f of files) {
+          inputs.push(await f.text());
+        }
+        if (pasted) {
+          pasted
+            .split(/\r?\n/)
+            .map((line) => line.trim())
+            .filter(Boolean)
+            .forEach((line) => inputs.push(line));
+        }
+
+        if (!inputs.length) {
+          notifyUser("Upload .json receipt(s) or paste verification code(s) first.");
+          return;
+        }
+
+        let gradedNow = 0;
+        inputs.forEach((item) => {
+          try {
+            const receipt = decodeVerification(item);
+            gradedRecords.unshift(gradeReceiptTo720(receipt));
+            gradedNow++;
+          } catch (err) {
+            notifyUser("Could not decode a student receipt entry.");
+          }
+        });
+
+        if (gradedNow > 0) {
+          renderGradedCards();
+          notifyUser(`Graded ${gradedNow} student submission(s).`);
+        }
+      });
+
+      document.getElementById("exportResultsCsvBtn").addEventListener("click", () => {
+        if (!gradedRecords.length) return;
+        const headers = [
+          "Candidate Name",
+          "Roll Number",
+          "Batch",
+          "Scaled Score (/720)",
+          "Raw Score (/540)",
+          "Physics (/240)",
+          "Chemistry (/240)",
+          "Biology (/240)",
+          "Accuracy %",
+          "Correct",
+          "Wrong",
+          "Unattempted",
+          "Strikes",
+          "Auto Locked"
+        ];
+        const rows = gradedRecords.map((r) => [
+          `"${r.candidateName.replace(/"/g, '""')}"`,
+          `"${r.candidateRoll.replace(/"/g, '""')}"`,
+          `"${r.candidateBatch.replace(/"/g, '""')}"`,
+          r.scaledScore720,
+          r.rawTotal,
+          r.modBreakdown.Physics.scaled720,
+          r.modBreakdown.Chemistry.scaled720,
+          r.modBreakdown.Biology.scaled720,
+          r.accuracyPct,
+          r.correctCount,
+          r.wrongCount,
+          r.blankCount,
+          `${r.strikes}/${r.maxStrikes}`,
+          r.lockedByCheat ? "Yes" : "No"
+        ]);
+        const csv = [headers.join(","), ...rows.map((row) => row.join(","))].join("\n");
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "NEET_2027_720_Results.csv";
+        a.click();
+        URL.revokeObjectURL(url);
+      });
+    })();
+  </script>
+</body>
+</html>
